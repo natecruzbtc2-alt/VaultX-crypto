@@ -17,5 +17,18 @@
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",
     "vite": "^5.4.1"
-  }
+  },
+  "description": "",
+  "main": "app.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/natecruzbtc2-alt/VaultXcrypto_.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/natecruzbtc2-alt/VaultXcrypto_/issues"
+  },
+  "homepage": "https://github.com/natecruzbtc2-alt/VaultXcrypto_#readme"
 }
