@@ -120,17 +120,67 @@ export function AppProvider({ children }) {
   const [user,     setUser]     = useState(null);
   const [dashTab,  setDashTab]  = useState("overview");
   const [adminTab, setAdminTab] = useState("users");
-  const [users,    setUsers]    = useState([]);
-  const [txHistory,setTxHistory]= useState({});
-  const [pending,  setPending]  = useState(genPendingTx);
-  const [feeReqs,  setFeeReqs]  = useState([]);
+
+  // Persisted state
+  const [users, setUsers] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("vx_users") || "[]");
+    } catch {
+      return [];
+    }
+  });
+
+  const [txHistory, setTxHistory] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("vx_history") || "{}");
+    } catch {
+      return {};
+    }
+  });
+
+  const [pending, setPending] = useState(() => {
+    try {
+      return (
+   JSON.parse(localStorage.getItem("vx_pending") || "null") ||
+        genPendingTx()
+      );
+    } catch {
+      return genPendingTx();
+    }
+  });
+
+  const [feeReqs, setFeeReqs] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("vx_fees") || "[]");
+    } catch {
+      return [];
+    }
+  });
+
   const [toast,    setToast]    = useState(null);
   const [modal,    setModal]    = useState(null);
   const [alert,    setAlert]    = useState("");
 
+  // Save to localStorage whenever state changes
+  useEffect(() => {
+    localStorage.setItem("vx_users", JSON.stringify(users));
+  }, [users]);
+
+  useEffect(() => {
+    localStorage.setItem("vx_history", JSON.stringify(txHistory));
+  }, [txHistory]);
+
+  useEffect(() => {
+    localStorage.setItem("vx_pending", JSON.stringify(pending));
+  }, [pending]);
+
+  useEffect(() => {
+    localStorage.setItem("vx_fees", JSON.stringify(feeReqs));
+  }, [feeReqs]);
+
   const showToast = useCallback((msg,type="info")=>{
     setToast({msg,type});
-    setTimeout(()=>setToast(null),3500);
+    setTimeout(()=>setToast(null),3500);   
   },[]);
 
   const showAlert = useCallback((text)=>{
@@ -155,7 +205,9 @@ export function AppProvider({ children }) {
   },[showToast]);
 
   const doLogout = useCallback(()=>{
-    setUser(null);setView("landing");showToast("Signed out");
+    setUser(null);
+    setView("landing");
+    showToast("Signed out");
   },[showToast]);
 
   const value = {
