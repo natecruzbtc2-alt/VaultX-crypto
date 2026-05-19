@@ -1,4 +1,12 @@
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
+
+import { supabase } from "./supabase";
 
 export const COINS = [
   { sym: "BTC", name: "Bitcoin", color: "#F7931A", bg: "#1a0f00" },
@@ -78,27 +86,7 @@ export function createStaking(pf = 0) {
 }
 
 function genPendingTx() {
-  const t = ["Withdrawal", "Deposit"];
-  const co = ["BTC", "ETH", "USDT", "SOL", "BNB"];
-
-  return Array.from({ length: 6 }, (_, i) => ({
-    id: `PX${String(200 + i).padStart(6, "0")}`,
-    user: [
-      "alice@email.com",
-      "bob@email.com",
-      "clara@email.com",
-      "dave@email.com",
-    ][i % 4],
-    type: t[i % 2],
-    coin: co[i % 5],
-    amount: +(Math.random() * 5 + 0.01).toFixed(4),
-    usd: +(Math.random() * 15000 + 100).toFixed(2),
-    fee: +(Math.random() * 20 + 1).toFixed(2),
-    submitted: new Date(
-      Date.now() - i * 3600000 * 2
-    ).toLocaleString(),
-    network: ["ERC-20", "BEP-20", "TRC-20", "Native"][i % 4],
-  }));
+  return [];
 }
 
 export const PriceContext = createContext({});
@@ -129,9 +117,7 @@ export function PriceProvider({ children }) {
         const r = await Promise.all(
           COINS.map(async (c) => {
             const res = await fetch(
-              "https://api.coinbase.com/v2/prices/" +
-                c.sym +
-                "-USD/spot"
+              `https://api.coinbase.com/v2/prices/${c.sym}-USD/spot`
             );
 
             const j = await res.json();
@@ -162,7 +148,9 @@ export function PriceProvider({ children }) {
 
           return next;
         });
-      } catch (e) {}
+      } catch (e) {
+        console.log(e);
+      }
     };
 
     go();
@@ -173,30 +161,6 @@ export function PriceProvider({ children }) {
       active = false;
       clearInterval(id);
     };
-  }, []);
-
-  useEffect(() => {
-    const id = setInterval(() => {
-      setPrices((prev) => {
-        const next = { ...prev };
-
-        COINS.forEach((c) => {
-          const o = next[c.sym];
-
-          const p = o.price * (1 + (Math.random() - 0.495) * 0.002);
-
-          next[c.sym] = {
-            price: p,
-            change: +(o.change + (Math.random() - 0.495) * 0.05).toFixed(2),
-            spark: [...o.spark.slice(1), p],
-          };
-        });
-
-        return next;
-      });
-    }, 2500);
-
-    return () => clearInterval(id);
   }, []);
 
   return (
@@ -212,60 +176,66 @@ export function AppProvider({ children }) {
   const [dashTab, setDashTab] = useState("overview");
   const [adminTab, setAdminTab] = useState("users");
 
-  const [users, setUsers] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("vx_users") || "[]");
-    } catch {
-      return [];
-    }
-  });
-
-  const [txHistory, setTxHistory] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("vx_history") || "{}");
-    } catch {
-      return {};
-    }
-  });
-
-  const [pending, setPending] = useState(() => {
-    try {
-      return (
-        JSON.parse(localStorage.getItem("vx_pending") || "null") ||
-        genPendingTx()
-      );
-    } catch {
-      return genPendingTx();
-    }
-  });
-
-  const [feeReqs, setFeeReqs] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem("vx_fees") || "[]");
-    } catch {
-      return [];
-    }
-  });
+  const [users, setUsers] = useState([]);
+  const [txHistory, setTxHistory] = useState({});
+  const [pending, setPending] = useState(genPendingTx());
+  const [feeReqs, setFeeReqs] = useState([]);
 
   const [toast, setToast] = useState(null);
   const [modal, setModal] = useState(null);
   const [alert, setAlert] = useState("");
 
   useEffect(() => {
+    loadUsers();
+  }, []);
+
+  async function loadUsers() {
+    try {
+      const { data, error } = await supabase
+        .from("vx_users")
+        .select("*");
+
+      if (error) {
+        console.log(error);
+        return;
+      }
+
+      if (data) {
+        setUsers(data);
+        localStorage.setItem("vx_users", JSON.stringify(data));
+      }
+    } catch (e) {
+      console.log(e);
+
+      try {
+        const local = JSON.parse(
+          localStorage.getItem("vx_users") || "[]"
+        );
+
+        setUsers(local);
+      } catch {}
+    }
+  }
+
+  useEffect(() => {
     localStorage.setItem("vx_users", JSON.stringify(users));
+
+    async function saveUsers() {
+      for (const u of users) {
+        await supabase.from("vx_users").upsert({
+          email: u.email,
+          name: u.name || "",
+          password: u.password || "",
+          balance: u.balance || 0,
+          portfolio: u.portfolio || 0,
+        });
+      }
+    }
+
+    if (users.length > 0) {
+      saveUsers();
+    }
   }, [users]);
-
-  useEffect(() => {
-    localStorage.setItem("vx_history", JSON.stringify(txHistory));
-  }, [txHistory]);
-
-  useEffect(() => {
-    localStorage.setItem("vx_pending", JSON.stringify(pending));
-  }, [pending]);
-
-  useEffect(() => {
-    localStorage.setItem("vx_fees", JSON.stringify(feeReqs));
-  }, [feeReqs]);
 
   const showToast = useCallback((msg, type = "info") => {
     setToast({ msg, type });
@@ -286,9 +256,17 @@ export function AppProvider({ children }) {
   const updateUser = useCallback((u) => {
     setUser(u);
 
-    setUsers((prev) =>
-      prev.map((x) => (x.email === u.email ? u : x))
-    );
+    setUsers((prev) => {
+      const exists = prev.find((x) => x.email === u.email);
+
+      if (exists) {
+        return prev.map((x) =>
+          x.email === u.email ? u : x
+        );
+      }
+
+      return [...prev, u];
+    });
   }, []);
 
   const addTx = useCallback((email, tx) => {
@@ -305,7 +283,9 @@ export function AppProvider({ children }) {
 
   const removePending = useCallback(
     (id, label = "Transaction") => {
-      setPending((prev) => prev.filter((t) => t.id !== id));
+      setPending((prev) =>
+        prev.filter((t) => t.id !== id)
+      );
 
       showToast(label + " processed", "info");
     },
