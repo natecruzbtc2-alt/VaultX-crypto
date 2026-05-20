@@ -226,22 +226,27 @@ export function AppProvider({ children }) {
 
   // ── SET USERS (saves to Supabase) ────────────────────────────────────────────
   const setUsersAndSave = useCallback((updater)=>{
-    setUsers(prev=>{
-      const next = typeof updater==="function" ? updater(prev) : updater;
-      // Save new/changed users to Supabase
-      next.forEach(u=>{
-        supabase.from("vx_users").upsert({
-          id:u.id, name:u.name, email:u.email, password:u.password,
-          balance:u.balance, portfolio:u.portfolio,
-          holdings:u.holdings, staking:u.staking,
-          joined:u.joined, verified:u.verified,
-          status:u.status, tier:u.tier,
-        }).catch(()=>{});
-      });
-      localStorage.setItem("vx_users", JSON.stringify(next));
-      return next;
-    });
-  },[]);
+  setUsers(prev=>{
+    const next = typeof updater==="function" ? updater(prev) : updater;
+    // Save to localStorage immediately
+    localStorage.setItem("vx_users", JSON.stringify(next));
+    // Save to Supabase async
+    (async () => {
+      try {
+        for (const u of next) {
+          await supabase.from("vx_users").upsert({
+            id:u.id, name:u.name, email:u.email, password:u.password,
+            balance:u.balance, portfolio:u.portfolio,
+            holdings:u.holdings, staking:u.staking,
+            joined:u.joined, verified:u.verified,
+            status:u.status, tier:u.tier,
+          });
+        }
+      } catch(e) { console.warn("Supabase save failed", e); }
+    })();
+    return next;
+  });
+},[]);
 
   // ── SET PENDING (saves to Supabase) ──────────────────────────────────────────
   const setPendingAndSave = useCallback((updater)=>{
