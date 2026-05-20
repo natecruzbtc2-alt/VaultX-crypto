@@ -24,7 +24,7 @@ export function Dashboard() {
       {/* Nav */}
       <nav style={S.nav}>
         <div style={S.logo}>
-          <div style={S.logoMark}>VX</div>VaultXcrypto
+          <img src="/logo.png" style={{width:36,height:36,borderRadius:10,objectFit:"cover"}} alt="VaultX"/>VaultXcrypto
         </div>
         <TickerMini />
         <div style={S.row}>
