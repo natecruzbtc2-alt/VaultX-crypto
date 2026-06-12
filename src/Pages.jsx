@@ -1,0 +1,370 @@
+import { useApp } from "./AppContext";
+import { C, S, btn, globalCSS } from "./theme";
+
+// ─── FOOTER ───────────────────────────────────────────────────────────────────
+export function Footer({ onNavigate }) {
+  return (
+    <footer style={{ background: "#04030a", borderTop: `1px solid ${C.border2}`, padding: "48px 24px 24px", marginTop: 60 }}>
+      <div style={{ maxWidth: 1140, margin: "0 auto" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr 1fr", gap: 40, marginBottom: 40 }}>
+          {/* Brand */}
+          <div>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+              <img src="/logo.png" style={{ width: 36, height: 36, borderRadius: 10, objectFit: "cover" }} alt="VaultX" onError={e => { e.target.style.display = "none"; }} />
+              <span style={{ fontSize: 18, fontWeight: 800, color: C.text, textTransform: "uppercase", letterSpacing: "-.5px" }}>VaultXcrypto</span>
+            </div>
+            <p style={{ fontSize: 13, color: C.text3, lineHeight: 1.8, maxWidth: 280 }}>
+              VaultX Ltd is a UK-registered cryptocurrency trading and portfolio management platform. We provide secure, real-time access to global crypto markets.
+            </p>
+            <div style={{ marginTop: 16, fontSize: 12, color: C.text3 }}>
+              <div>🏢 VaultX Ltd — Registered in England & Wales</div>
+              <div style={{ marginTop: 4 }}>📍 71-75 Shelton Street, London, WC2H 9JQ</div>
+              <div style={{ marginTop: 4 }}>📧 support@vaultxcrypto.io</div>
+            </div>
+          </div>
+
+          {/* Products */}
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 16, textTransform: "uppercase", letterSpacing: ".06em" }}>Platform</div>
+            {[["Trading", "trade"], ["Portfolio", "portfolio"], ["Staking", "staking"], ["Markets", "markets"], ["Wallet", "wallet"]].map(([label, page]) => (
+              <div key={label} style={{ marginBottom: 10 }}>
+                <span style={{ fontSize: 13, color: C.text3, cursor: "pointer", transition: "color .15s" }}
+                  onMouseEnter={e => e.target.style.color = C.purple3}
+                  onMouseLeave={e => e.target.style.color = C.text3}
+                  onClick={() => onNavigate && onNavigate(page)}>
+                  {label}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Company */}
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 16, textTransform: "uppercase", letterSpacing: ".06em" }}>Company</div>
+            {[["About Us", "about"], ["Contact", "contact"], ["Privacy Policy", "privacy"], ["Terms of Service", "terms"], ["Cookie Policy", "cookies"]].map(([label, page]) => (
+              <div key={label} style={{ marginBottom: 10 }}>
+                <span style={{ fontSize: 13, color: C.text3, cursor: "pointer", transition: "color .15s" }}
+                  onMouseEnter={e => e.target.style.color = C.purple3}
+                  onMouseLeave={e => e.target.style.color = C.text3}
+                  onClick={() => onNavigate && onNavigate(page)}>
+                  {label}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Support */}
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: C.text, marginBottom: 16, textTransform: "uppercase", letterSpacing: ".06em" }}>Support</div>
+            {[["Help Centre", "help"], ["Security", "security"], ["Fees & Limits", "fees"], ["Status Page", "status"], ["Report Issue", "contact"]].map(([label, page]) => (
+              <div key={label} style={{ marginBottom: 10 }}>
+                <span style={{ fontSize: 13, color: C.text3, cursor: "pointer", transition: "color .15s" }}
+                  onMouseEnter={e => e.target.style.color = C.purple3}
+                  onMouseLeave={e => e.target.style.color = C.text3}
+                  onClick={() => onNavigate && onNavigate(page)}>
+                  {label}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Bottom bar */}
+        <div style={{ borderTop: `1px solid ${C.border2}`, paddingTop: 24, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+          <div style={{ fontSize: 12, color: C.text3 }}>
+            © {new Date().getFullYear()} VaultX Ltd. All rights reserved. Registered in England & Wales. Company No. 14782341
+          </div>
+          <div style={{ display: "flex", gap: 20 }}>
+            {["Privacy Policy", "Terms of Service", "Cookie Policy"].map(label => (
+              <span key={label} style={{ fontSize: 12, color: C.text3, cursor: "pointer" }}
+                onMouseEnter={e => e.target.style.color = C.purple3}
+                onMouseLeave={e => e.target.style.color = C.text3}
+                onClick={() => onNavigate && onNavigate(label.toLowerCase().replace(/ /g, "-"))}>
+                {label}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Disclaimer */}
+        <div style={{ marginTop: 16, fontSize: 11, color: C.text3, lineHeight: 1.7, opacity: .7 }}>
+          ⚠️ Cryptocurrency trading involves significant risk. The value of cryptocurrencies can go up or down, and you may lose your entire investment. VaultX Ltd is not a regulated financial advisor. This platform is for informational and trading purposes only. Please ensure you understand the risks before trading.
+        </div>
+      </div>
+    </footer>
+  );
+}
+
+// ─── ABOUT PAGE ───────────────────────────────────────────────────────────────
+export function AboutPage() {
+  const { setView } = useApp();
+  return (
+    <div style={S.app}>
+      <style>{globalCSS}</style>
+      <nav style={S.nav}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 17, fontWeight: 800, cursor: "pointer", textTransform: "uppercase", color: C.text }} onClick={() => setView("landing")}>
+          <img src="/logo.png" style={{ width: 36, height: 36, borderRadius: 10, objectFit: "cover" }} alt="VaultX" onError={e => { e.target.style.display = "none"; }} />
+          VaultXcrypto
+        </div>
+        <div style={{ display: "flex", gap: 12 }}>
+          <button style={{ ...btn("ghost"), padding: "7px 16px", fontSize: 13 }} onClick={() => setView("login")}>Sign In</button>
+          <button style={{ ...btn(), padding: "7px 16px", fontSize: 13 }} onClick={() => setView("register")}>Get Started</button>
+        </div>
+      </nav>
+
+      <div style={{ maxWidth: 900, margin: "0 auto", padding: "60px 24px" }}>
+        <div style={{ textAlign: "center", marginBottom: 56 }}>
+          <div style={{ fontSize: 11, color: C.purple3, textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 12 }}>About Us</div>
+          <h1 style={{ fontSize: 42, fontWeight: 800, color: C.text, letterSpacing: "-1.5px", marginBottom: 16 }}>
+            Building the future of<br />
+            <span style={{ background: `linear-gradient(135deg,${C.purple},${C.purple3})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>crypto finance</span>
+          </h1>
+          <p style={{ fontSize: 16, color: C.text3, lineHeight: 1.8, maxWidth: 600, margin: "0 auto" }}>
+            VaultX Ltd is a London-based cryptocurrency platform dedicated to making professional-grade trading accessible to everyone.
+          </p>
+        </div>
+
+        {/* Stats */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16, marginBottom: 56 }}>
+          {[["2022", "Founded"], ["50,000+", "Active Users"], ["$2.4B+", "Volume Traded"], ["99.9%", "Uptime SLA"]].map(([v, l]) => (
+            <div key={l} style={{ ...S.card, textAlign: "center" }}>
+              <div style={{ fontSize: 28, fontWeight: 800, color: C.purple3, marginBottom: 6 }}>{v}</div>
+              <div style={{ fontSize: 13, color: C.text3 }}>{l}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Mission */}
+        <div style={{ ...S.card, marginBottom: 24 }}>
+          <div style={{ fontSize: 20, fontWeight: 700, color: C.text, marginBottom: 14 }}>Our Mission</div>
+          <p style={{ fontSize: 14, color: C.text2, lineHeight: 1.9 }}>
+            At VaultX, we believe everyone deserves access to the same financial tools previously reserved for institutional investors.
+            Our platform combines cutting-edge technology with an intuitive interface to deliver a world-class trading experience —
+            whether you're making your first crypto purchase or managing a multi-asset portfolio.
+          </p>
+        </div>
+
+        {/* Values */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 24 }}>
+          {[
+            { icon: "🔐", title: "Security First", desc: "Your funds are protected by multi-signature wallets, cold storage, and bank-grade encryption. We hold client funds in segregated accounts." },
+            { icon: "⚡", title: "Real-Time Everything", desc: "Live prices, instant order execution, and real-time portfolio updates. No delays, no stale data — just pure, accurate information." },
+            { icon: "🌍", title: "Global Access", desc: "Serving clients across Europe and beyond. Our platform is available 24/7, 365 days a year with multilingual support." },
+            { icon: "📊", title: "Transparency", desc: "Clear fee structures, honest reporting, and full audit trails for every transaction. We believe in complete transparency with our clients." },
+          ].map((item, i) => (
+            <div key={i} style={S.scard}>
+              <div style={{ fontSize: 28, marginBottom: 10 }}>{item.icon}</div>
+              <div style={{ fontWeight: 700, color: C.text, marginBottom: 8 }}>{item.title}</div>
+              <div style={{ fontSize: 13, color: C.text3, lineHeight: 1.7 }}>{item.desc}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Company Info */}
+        <div style={{ ...S.card, marginBottom: 24 }}>
+          <div style={{ fontSize: 20, fontWeight: 700, color: C.text, marginBottom: 16 }}>Company Information</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            {[
+              ["Company Name", "VaultX Ltd"],
+              ["Registration Number", "14782341"],
+              ["Registered Country", "England & Wales, United Kingdom"],
+              ["Registered Address", "71-75 Shelton Street, London, WC2H 9JQ"],
+              ["Founded", "2022"],
+              ["Support Email", "support@vaultxcrypto.io"],
+            ].map(([label, value]) => (
+              <div key={label} style={{ padding: "12px 16px", background: `rgba(138,43,226,.04)`, borderRadius: 10 }}>
+                <div style={{ fontSize: 11, color: C.text3, textTransform: "uppercase", letterSpacing: ".06em", marginBottom: 4 }}>{label}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, color: C.text }}>{value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div style={{ textAlign: "center" }}>
+          <button style={{ ...btn(), padding: "13px 32px", fontSize: 15 }} onClick={() => setView("register")}>
+            Start Trading Today →
+          </button>
+        </div>
+      </div>
+      <Footer onNavigate={page => {
+        if (page === "contact") setView("contact");
+        else if (page === "terms") setView("terms");
+        else if (page === "privacy") setView("privacy");
+        else setView("landing");
+      }} />
+    </div>
+  );
+}
+
+// ─── CONTACT PAGE ─────────────────────────────────────────────────────────────
+export function ContactPage() {
+  const { setView, showToast } = useApp();
+  return (
+    <div style={S.app}>
+      <style>{globalCSS}</style>
+      <nav style={S.nav}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 17, fontWeight: 800, cursor: "pointer", textTransform: "uppercase", color: C.text }} onClick={() => setView("landing")}>
+          <img src="/logo.png" style={{ width: 36, height: 36, borderRadius: 10, objectFit: "cover" }} alt="VaultX" onError={e => { e.target.style.display = "none"; }} />
+          VaultXcrypto
+        </div>
+        <div style={{ display: "flex", gap: 12 }}>
+          <button style={{ ...btn("ghost"), padding: "7px 16px", fontSize: 13 }} onClick={() => setView("login")}>Sign In</button>
+          <button style={{ ...btn(), padding: "7px 16px", fontSize: 13 }} onClick={() => setView("register")}>Get Started</button>
+        </div>
+      </nav>
+      <div style={{ maxWidth: 800, margin: "0 auto", padding: "60px 24px" }}>
+        <div style={{ textAlign: "center", marginBottom: 48 }}>
+          <div style={{ fontSize: 11, color: C.purple3, textTransform: "uppercase", letterSpacing: ".1em", marginBottom: 12 }}>Contact Us</div>
+          <h1 style={{ fontSize: 40, fontWeight: 800, color: C.text, letterSpacing: "-1.5px", marginBottom: 14 }}>We're here to help</h1>
+          <p style={{ fontSize: 15, color: C.text3, lineHeight: 1.8 }}>Our support team is available 24/7. Reach out via any channel below.</p>
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 40 }}>
+          {[
+            { icon: "📧", title: "Email Support", value: "support@vaultxcrypto.io", desc: "Response within 2 hours" },
+            { icon: "💬", title: "Live Chat", value: "Available 24/7", desc: "Click the chat button below" },
+            { icon: "📍", title: "Office", value: "London, UK", desc: "71-75 Shelton Street, WC2H 9JQ" },
+          ].map((item, i) => (
+            <div key={i} style={{ ...S.card, textAlign: "center" }}>
+              <div style={{ fontSize: 32, marginBottom: 12 }}>{item.icon}</div>
+              <div style={{ fontWeight: 700, color: C.text, marginBottom: 6 }}>{item.title}</div>
+              <div style={{ fontSize: 13, color: C.purple3, fontWeight: 600, marginBottom: 4 }}>{item.value}</div>
+              <div style={{ fontSize: 12, color: C.text3 }}>{item.desc}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Contact Form */}
+        <div style={S.card}>
+          <div style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 20 }}>Send us a message</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 14 }}>
+            <div>
+              <label style={S.label}>Full Name</label>
+              <input style={S.inp} placeholder="John Smith" />
+            </div>
+            <div>
+              <label style={S.label}>Email Address</label>
+              <input style={S.inp} type="email" placeholder="you@email.com" />
+            </div>
+          </div>
+          <div style={{ marginBottom: 14 }}>
+            <label style={S.label}>Subject</label>
+            <select style={S.sel}>
+              <option>Account Support</option>
+              <option>Deposit / Withdrawal</option>
+              <option>Technical Issue</option>
+              <option>Security Concern</option>
+              <option>General Inquiry</option>
+              <option>Partnership</option>
+            </select>
+          </div>
+          <div style={{ marginBottom: 20 }}>
+            <label style={S.label}>Message</label>
+            <textarea style={{ ...S.inp, height: 120, resize: "vertical" }} placeholder="Describe your issue or question in detail…" />
+          </div>
+          <button style={{ ...btn("success"), padding: "12px 28px", fontSize: 14 }} onClick={() => showToast("Message sent! We'll reply within 2 hours.", "success")}>
+            Send Message →
+          </button>
+        </div>
+      </div>
+      <Footer onNavigate={page => setView(page)} />
+    </div>
+  );
+}
+
+// ─── TERMS OF SERVICE ─────────────────────────────────────────────────────────
+export function TermsPage() {
+  const { setView } = useApp();
+  return (
+    <div style={S.app}>
+      <style>{globalCSS}</style>
+      <nav style={S.nav}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 17, fontWeight: 800, cursor: "pointer", textTransform: "uppercase", color: C.text }} onClick={() => setView("landing")}>
+          <img src="/logo.png" style={{ width: 36, height: 36, borderRadius: 10, objectFit: "cover" }} alt="VaultX" onError={e => { e.target.style.display = "none"; }} />
+          VaultXcrypto
+        </div>
+      </nav>
+      <div style={{ maxWidth: 800, margin: "0 auto", padding: "60px 24px" }}>
+        <h1 style={{ fontSize: 36, fontWeight: 800, color: C.text, marginBottom: 8 }}>Terms of Service</h1>
+        <div style={{ fontSize: 13, color: C.text3, marginBottom: 40 }}>Last updated: January 1, 2024 · VaultX Ltd</div>
+        {[
+          ["1. Acceptance of Terms", "By accessing or using VaultX platform, you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our services. VaultX Ltd reserves the right to modify these terms at any time."],
+          ["2. Eligibility", "You must be at least 18 years of age to use our platform. By using VaultX, you represent and warrant that you are of legal age and have the legal capacity to enter into these terms. Our services are not available to residents of jurisdictions where cryptocurrency trading is prohibited."],
+          ["3. Account Registration", "You are responsible for maintaining the confidentiality of your account credentials. You agree to notify us immediately of any unauthorised use of your account. VaultX Ltd is not liable for any losses resulting from unauthorised access to your account."],
+          ["4. Trading & Transactions", "All trades are executed at market prices. VaultX does not guarantee execution at any specific price. Cryptocurrency markets are volatile and prices can change rapidly. You acknowledge and accept all risks associated with cryptocurrency trading."],
+          ["5. Fees", "VaultX charges a trading fee of 0.10% per transaction. Withdrawal fees vary by network and cryptocurrency. All applicable fees will be clearly displayed before you confirm any transaction. We reserve the right to modify our fee structure with 30 days notice."],
+          ["6. Risk Disclosure", "Cryptocurrency trading involves significant financial risk. The value of cryptocurrencies can decrease substantially or become worthless. Past performance is not indicative of future results. Never invest more than you can afford to lose. VaultX Ltd is not a financial advisor."],
+          ["7. Prohibited Activities", "You agree not to use our platform for money laundering, fraud, or any illegal activity. You agree not to attempt to manipulate markets or interfere with our systems. Violation of these terms may result in immediate account termination and reporting to relevant authorities."],
+          ["8. Privacy", "Your use of VaultX is also governed by our Privacy Policy. We collect and process personal data in accordance with UK GDPR and the Data Protection Act 2018."],
+          ["9. Limitation of Liability", "VaultX Ltd shall not be liable for any indirect, incidental, or consequential damages arising from your use of our platform. Our total liability shall not exceed the fees paid by you in the 12 months preceding the claim."],
+          ["10. Governing Law", "These terms are governed by the laws of England and Wales. Any disputes shall be subject to the exclusive jurisdiction of the courts of England and Wales."],
+          ["11. Contact", "For questions about these terms, please contact us at support@vaultxcrypto.io or write to VaultX Ltd, 71-75 Shelton Street, London, WC2H 9JQ, United Kingdom."],
+        ].map(([title, content]) => (
+          <div key={title} style={{ marginBottom: 28 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 10 }}>{title}</div>
+            <p style={{ fontSize: 14, color: C.text2, lineHeight: 1.9 }}>{content}</p>
+          </div>
+        ))}
+        <button style={{ ...btn("ghost"), padding: "10px 20px" }} onClick={() => setView("landing")}>← Back to Home</button>
+      </div>
+      <Footer onNavigate={page => setView(page)} />
+    </div>
+  );
+}
+
+// ─── PRIVACY POLICY ───────────────────────────────────────────────────────────
+export function PrivacyPage() {
+  const { setView } = useApp();
+  return (
+    <div style={S.app}>
+      <style>{globalCSS}</style>
+      <nav style={S.nav}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, fontSize: 17, fontWeight: 800, cursor: "pointer", textTransform: "uppercase", color: C.text }} onClick={() => setView("landing")}>
+          <img src="/logo.png" style={{ width: 36, height: 36, borderRadius: 10, objectFit: "cover" }} alt="VaultX" onError={e => { e.target.style.display = "none"; }} />
+          VaultXcrypto
+        </div>
+      </nav>
+      <div style={{ maxWidth: 800, margin: "0 auto", padding: "60px 24px" }}>
+        <h1 style={{ fontSize: 36, fontWeight: 800, color: C.text, marginBottom: 8 }}>Privacy Policy</h1>
+        <div style={{ fontSize: 13, color: C.text3, marginBottom: 40 }}>Last updated: January 1, 2024 · VaultX Ltd</div>
+        {[
+          ["1. Who We Are", "VaultX Ltd is registered in England and Wales (Company No. 14782341) with registered address at 71-75 Shelton Street, London, WC2H 9JQ. We are the data controller for the personal information we process about you."],
+          ["2. Information We Collect", "We collect information you provide when registering (name, email, password), transaction data, device and browser information, IP addresses, and usage analytics. We may also collect identity verification documents as required by law."],
+          ["3. How We Use Your Information", "We use your personal data to provide and improve our services, process transactions, comply with legal obligations, prevent fraud, and communicate with you about your account and our services."],
+          ["4. Legal Basis for Processing", "We process your data on the basis of contract performance (to provide our services), legal obligation (KYC/AML compliance), legitimate interests (fraud prevention, security), and consent where applicable."],
+          ["5. Data Retention", "We retain your personal data for as long as your account is active and for 7 years after account closure, as required by UK financial regulations. Transaction records are kept for 10 years."],
+          ["6. Your Rights", "Under UK GDPR, you have the right to access, rectify, erase, restrict processing, data portability, and object to processing of your personal data. To exercise these rights, contact us at support@vaultxcrypto.io."],
+          ["7. Data Security", "We use industry-standard encryption (AES-256), secure servers, and strict access controls to protect your data. We conduct regular security audits and penetration testing."],
+          ["8. Cookies", "We use essential cookies for platform functionality and analytics cookies to improve our service. You can control cookie preferences through your browser settings."],
+          ["9. Third Parties", "We do not sell your personal data. We may share data with payment processors, identity verification services, and regulatory authorities when required by law."],
+          ["10. Contact Us", "For privacy-related queries, contact our Data Protection Officer at support@vaultxcrypto.io or write to VaultX Ltd, 71-75 Shelton Street, London, WC2H 9JQ."],
+        ].map(([title, content]) => (
+          <div key={title} style={{ marginBottom: 28 }}>
+            <div style={{ fontSize: 16, fontWeight: 700, color: C.text, marginBottom: 10 }}>{title}</div>
+            <p style={{ fontSize: 14, color: C.text2, lineHeight: 1.9 }}>{content}</p>
+          </div>
+        ))}
+        <button style={{ ...btn("ghost"), padding: "10px 20px" }} onClick={() => setView("landing")}>← Back to Home</button>
+      </div>
+      <Footer onNavigate={page => setView(page)} />
+    </div>
+  );
+}
+
+// ─── LIVE CHAT (Tawk.to) ──────────────────────────────────────────────────────
+export function LiveChat() {
+  // Tawk.to free live chat widget
+  // Replace 'YOUR_TAWK_ID' with your actual Tawk.to property ID from tawk.to
+  const script = `
+    var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+    (function(){
+      var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
+      s1.async=true;
+      s1.src='https://embed.tawk.to/YOUR_TAWK_ID/default';
+      s1.charset='UTF-8';
+      s1.setAttribute('crossorigin','*');
+      s0.parentNode.insertBefore(s1,s0);
+    })();
+  `;
+  return null; // Tawk.to injects itself — see instructions below
+}
