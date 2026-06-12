@@ -156,10 +156,10 @@ export function AdminDeposits() {
     setUsers(updated);
     if (currentUser && currentUser.email === target) setUser(updated[idx]);
 
-    const qty = +(amount / (BASE_PRICES[form.coin]||1)).toFixed(8);
+const depositQty = +(amount / (BASE_PRICES[form.coin] || 1)).toFixed(8);
     const tx = {
       id: `DP${Date.now()}`, user: target, type:"Deposit", coin: form.coin,
-      amount: qty, usd: amount, fee: +(amount*.001).toFixed(2),
+      amount: depositQty, usd: amount, fee: +(amount*.001).toFixed(2),
       submitted: new Date().toLocaleString(), network: form.network, status:"Completed",
     };
     setPending(prev => [tx, ...prev]);
