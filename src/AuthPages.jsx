@@ -1,8 +1,9 @@
+import { Footer } from "./Pages";
 import { useState, useCallback } from "react";
 import { useApp, ADMIN_CREDS, createHoldings, createStaking, usePrices, COINS, fmt } from "./AppContext";
 import { C, S, btn, globalCSS } from "./theme";
 import { TickerBar, Spark } from "./components";
-import { Footer } from "./Pages";
+
 
 function NavBar() {
   const { setView } = useApp();
@@ -152,7 +153,7 @@ export function LandingPage() {
       </div>
 
       {/* Footer */}
-      <Footer onNavigate={navigate} />
+      <Footer />
 
       {/* Live Chat - Tawk.to */}
       <script dangerouslySetInnerHTML={{ __html: `
