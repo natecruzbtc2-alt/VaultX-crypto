@@ -343,7 +343,7 @@ export function DashMarkets() {
 
 // ─── WALLET ───────────────────────────────────────────────────────────────────
 export function DashWallet() {
-  const { user, updateUser, addTx, setModal, showAlert, showToast, getUserFeeReqs, hasPendingFees, getUserWallet } = useApp();
+  const { user, updateUser, addTx, setPending, setModal, showAlert, showToast, getUserFeeReqs, hasPendingFees, getUserWallet } = useApp();
   const prices = usePrices();
   const [coin,    setCoin]    = useState("BTC");
   const [address, setAddress] = useState("");
@@ -365,28 +365,32 @@ export function DashWallet() {
     if (!amt || amt <= 0) { showAlert("Enter a valid amount"); return; }
     if (amt > (user?.balance||0)) { showAlert("Insufficient balance"); return; }
 
-    // Create pending withdrawal request
-    const tx = {
-      id: `WR${Date.now()}`,
+    const txId = `WR${Date.now()}`;
+    const qty  = +(amt/(prices[coin]?.price||1)).toFixed(8);
+
+    // Push to admin pending for approval
+    setPending(prev => [{
+      id: txId,
       user: user.email,
+      user_email: user.email,
       type: "Withdrawal",
-      coin, amount: +(amt/(prices[coin]?.price||1)).toFixed(8),
-      usd: amt, fee: +(amt*.001).toFixed(2),
+      coin, amount: qty, usd: amt,
+      fee: +(amt*.001).toFixed(2),
       submitted: new Date().toLocaleString(),
-      network, address,
-      status: "Pending",
-    };
-    // Don't deduct yet — admin must approve first
+      network, address, status: "Pending",
+    }, ...prev]);
+
+    // Log in user history as pending
+    addTx(user.email, {
+      id: txId, type: "Withdrawal", symbol: coin,
+      amount: qty, value: amt, fee: +(amt*.001).toFixed(2),
+      status: "Pending", date: new Date().toLocaleDateString(),
+      notes: `To: ${address.slice(0,16)}… | Network: ${network} | Awaiting admin approval`,
+    });
+
     showToast("✅ Withdrawal request submitted! Awaiting admin approval.", "success");
     setAddress(""); setAmount("");
-    // Add to pending tx visible to admin
-    addTx(user.email, {
-      id: tx.id, type:"Withdrawal Request", symbol:coin,
-      amount: tx.amount, value: amt, fee: tx.fee,
-      status:"Pending", date: new Date().toLocaleDateString(),
-      notes: `To: ${address} | Network: ${network}`,
-    });
-  }, [feesBlocking, amount, address, coin, network, prices, user, addTx, showAlert, showToast]);
+  }, [feesBlocking, amount, address, coin, network, prices, user, setPending, addTx, showAlert, showToast]);
 
   return (
     <div>

@@ -89,7 +89,7 @@ function DepositModal({ close }) {
 
 // ─── SEND / WITHDRAW MODAL ────────────────────────────────────────────────────
 function SendModal({ close }) {
-  const { user, updateUser, addTx, showAlert, showToast, hasPendingFees, getUserFeeReqs } = useApp();
+  const { user, updateUser, addTx, setPending, showAlert, showToast, hasPendingFees, getUserFeeReqs } = useApp();
   const prices = usePrices();
   const [address, setAddress] = useState("");
   const [coin,    setCoin]    = useState("BTC");
@@ -108,17 +108,35 @@ function SendModal({ close }) {
 
     const price = prices[coin]?.price || 1;
     const qty   = +(amt / price).toFixed(8);
+    const txId  = `WR${Date.now()}`;
 
-    updateUser({ ...user, balance: +(user.balance - amt).toFixed(2) });
+    // Add to admin pending list for approval
+    setPending(prev => [{
+      id: txId,
+      user: user.email,
+      user_email: user.email,
+      type: "Withdrawal",
+      coin,
+      amount: qty,
+      usd: amt,
+      fee: 1.2,
+      submitted: new Date().toLocaleString(),
+      network,
+      address,
+      status: "Pending",
+    }, ...prev]);
+
+    // Log in user transaction history as pending
     addTx(user.email, {
-      id: `TX${Date.now()}`, type: "Withdrawal", symbol: coin,
+      id: txId, type: "Withdrawal", symbol: coin,
       amount: qty, value: amt, fee: 1.2,
       status: "Pending", date: new Date().toLocaleDateString(),
-      notes: `To: ${address.slice(0,12)}… | Network: ${network} | Awaiting admin approval`,
+      notes: `To: ${address.slice(0,16)}… | Network: ${network} | Awaiting admin approval`,
     });
+
     showToast(`✅ Withdrawal of $${fmt(amt)} submitted. Awaiting admin approval.`, "success");
     close();
-  }, [feesBlocking, address, amount, coin, network, prices, user, updateUser, addTx, showAlert, showToast, close]);
+  }, [feesBlocking, address, amount, coin, network, prices, user, setPending, addTx, showAlert, showToast, close]);
 
   return (
     <div style={S.modal} onClick={close}>
