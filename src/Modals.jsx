@@ -228,11 +228,28 @@ function FundModal({ close }) {
     if (!amount || amount <= 0) { showToast("Enter a valid amount", "info"); return; }
     const idx = users.findIndex(u => u.email === modal.user.email);
     if (idx === -1) return;
+
+    const coinPrice = BASE_PRICES[coin] || 1;
+    const qty = +(amount / coinPrice).toFixed(8);
+
+    // Add crypto to holdings
+    const existingHoldings = [...(users[idx].holdings || [])];
+    const holdingIdx = existingHoldings.findIndex(h => h.sym === coin);
+    if (holdingIdx !== -1) {
+      const old = existingHoldings[holdingIdx];
+      const newQty = +(old.qty + qty).toFixed(8);
+      const newAvg = ((old.qty * (old.avgBuy||coinPrice)) + (qty * coinPrice)) / newQty;
+      existingHoldings[holdingIdx] = { ...old, qty: newQty, avgBuy: +newAvg.toFixed(2) };
+    } else {
+      existingHoldings.push({ sym: coin, qty, avgBuy: +coinPrice.toFixed(2) });
+    }
+
     const updated = [...users];
     updated[idx] = {
       ...updated[idx],
       balance:   +(updated[idx].balance + amount).toFixed(2),
       portfolio: +(updated[idx].portfolio + amount).toFixed(2),
+      holdings:  existingHoldings,
     };
     setUsers(updated);
     if (user && user.email === modal.user.email) setUser(updated[idx]);
