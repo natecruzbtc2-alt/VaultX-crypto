@@ -174,11 +174,11 @@ export function SettingsPage() {
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <span style={S.tag(item.status === "Complete" ? "green" : item.status === "Pending" ? "yellow" : "")}>{item.status}</span>
-                    {item.status !== "Complete" && <button style={{ ...btn("primary"), padding: "5px 14px", fontSize: 12 }} onClick={() => showToast("KYC verification — contact support@vaultxcrypto.io", "info")}>Start</button>}
+                    {item.status !== "Complete" && <button style={{ ...btn("primary"), padding: "5px 14px", fontSize: 12 }} onClick={() => showToast("KYC verification — contact support@vaultx-crypto.com", "info")}>Start</button>}
                   </div>
                 </div>
               ))}
-              <div style={{ marginTop: 16, fontSize: 12, color: C.text3 }}>For KYC verification assistance, contact us at support@vaultxcrypto.io</div>
+              <div style={{ marginTop: 16, fontSize: 12, color: C.text3 }}>For KYC verification assistance, contact us at support@vaultx-crypto.com</div>
             </div>
           )}
 

@@ -55,7 +55,7 @@ export function Footer() {
             <div style={{ marginTop:16, fontSize:12, color:C.text3, lineHeight:1.9 }}>
               <div>🏢 VaultX Ltd — Registered in England & Wales</div>
               <div>📍 71-75 Shelton Street, London, WC2H 9JQ</div>
-              <div>📧 support@vaultxcrypto.io</div>
+              <div>📧 support@vaultx-crypto.com</div>
               <div>🔢 Company No. 14782341</div>
             </div>
           </div>
@@ -183,7 +183,7 @@ export function AboutPage() {
               ["Registered Country","England & Wales, United Kingdom"],
               ["Registered Address","71-75 Shelton Street, London, WC2H 9JQ"],
               ["Founded","2022"],
-              ["Support Email","support@vaultxcrypto.io"],
+              ["Support Email","support@vaultx-crypto.com"],
             ].map(([label,value]) => (
               <div key={label} style={{ padding:"12px 16px", background:`rgba(138,43,226,.04)`, borderRadius:10 }}>
                 <div style={{ fontSize:11, color:C.text3, textTransform:"uppercase", letterSpacing:".06em", marginBottom:4 }}>{label}</div>
@@ -218,7 +218,7 @@ export function ContactPage() {
 
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:16, marginBottom:40 }}>
           {[
-            { icon:"📧", title:"Email Support",   value:"support@vaultxcrypto.io", desc:"Response within 2 hours" },
+            { icon:"📧", title:"Email Support",   value:"support@vaultx-crypto.com", desc:"Response within 2 hours" },
             { icon:"💬", title:"Live Chat",        value:"Available 24/7",          desc:"Click the chat button" },
             { icon:"📍", title:"Office",           value:"London, UK",              desc:"71-75 Shelton Street, WC2H 9JQ" },
           ].map((item,i) => (
@@ -279,7 +279,7 @@ export function TermsPage() {
           ["8. Privacy","Your use of VaultX is governed by our Privacy Policy. We collect and process personal data in accordance with UK GDPR and the Data Protection Act 2018."],
           ["9. Limitation of Liability","VaultX Ltd shall not be liable for any indirect, incidental, or consequential damages. Our total liability shall not exceed fees paid by you in the 12 months preceding the claim."],
           ["10. Governing Law","These terms are governed by the laws of England and Wales. Any disputes shall be subject to the exclusive jurisdiction of the courts of England and Wales."],
-          ["11. Contact","For questions: support@vaultxcrypto.io or VaultX Ltd, 71-75 Shelton Street, London, WC2H 9JQ, United Kingdom."],
+          ["11. Contact","For questions: support@vaultx-crypto.com or VaultX Ltd, 71-75 Shelton Street, London, WC2H 9JQ, United Kingdom."],
         ].map(([title,content]) => (
           <div key={title} style={{ marginBottom:28 }}>
             <div style={{ fontSize:16, fontWeight:700, color:C.text, marginBottom:10 }}>{title}</div>
@@ -311,11 +311,11 @@ export function PrivacyPage() {
           ["3. How We Use Your Information","We use your personal data to provide and improve our services, process transactions, comply with legal obligations, prevent fraud, and communicate with you about your account and our services."],
           ["4. Legal Basis for Processing","We process your data on the basis of contract performance, legal obligation (KYC/AML compliance), legitimate interests (fraud prevention, security), and consent where applicable."],
           ["5. Data Retention","We retain your personal data for as long as your account is active and for 7 years after account closure, as required by UK financial regulations. Transaction records are kept for 10 years."],
-          ["6. Your Rights","Under UK GDPR, you have the right to access, rectify, erase, restrict processing, data portability, and object to processing of your personal data. Contact us at support@vaultxcrypto.io."],
+          ["6. Your Rights","Under UK GDPR, you have the right to access, rectify, erase, restrict processing, data portability, and object to processing of your personal data. Contact us at support@vaultx-crypto.com."],
           ["7. Data Security","We use industry-standard encryption (AES-256), secure servers, and strict access controls to protect your data. We conduct regular security audits and penetration testing."],
           ["8. Cookies","We use essential cookies for platform functionality and analytics cookies to improve our service. You can control cookie preferences through your browser settings."],
           ["9. Third Parties","We do not sell your personal data. We may share data with payment processors, identity verification services, and regulatory authorities when required by law."],
-          ["10. Contact","For privacy queries: support@vaultxcrypto.io or VaultX Ltd, 71-75 Shelton Street, London, WC2H 9JQ."],
+          ["10. Contact","For privacy queries: support@vaultx-crypto.com or VaultX Ltd, 71-75 Shelton Street, London, WC2H 9JQ."],
         ].map(([title,content]) => (
           <div key={title} style={{ marginBottom:28 }}>
             <div style={{ fontSize:16, fontWeight:700, color:C.text, marginBottom:10 }}>{title}</div>

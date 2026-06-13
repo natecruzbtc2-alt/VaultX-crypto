@@ -71,11 +71,11 @@ function DepositModal({ close }) {
             </div>
             <div style={{ ...S.scard, marginBottom: 20, fontSize: 13 }}>
               <div style={{ color: C.text3, marginBottom: 4 }}>Support Email</div>
-              <div style={{ color: C.purple3, fontWeight: 600 }}>📧 support@vaultxcrypto.io</div>
+              <div style={{ color: C.purple3, fontWeight: 600 }}>📧 support@vaultx-crypto.com</div>
             </div>
             <div style={{ display: "flex", gap: 10 }}>
               <button style={{ ...btn("success"), flex: 1, padding: "12px" }}
-                onClick={() => { window.open("mailto:support@vaultxcrypto.io?subject=Deposit%20Wallet%20Request", "_blank"); showToast("Opening support email…", "info"); }}>
+                onClick={() => { window.open("mailto:support@vaultx-crypto.com?subject=Deposit%20Wallet%20Request", "_blank"); showToast("Opening support email…", "info"); }}>
                 Contact Support
               </button>
               <button style={{ ...btn("ghost"), flex: 1, padding: "12px" }} onClick={close}>Close</button>

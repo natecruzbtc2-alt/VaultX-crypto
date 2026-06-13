@@ -5,7 +5,7 @@ import { Spark, MiniChart, CoinIcon, Tag, EmptyState } from "./components";
 
 // ─── OVERVIEW ─────────────────────────────────────────────────────────────────
 export function DashOverview() {
-  const { user, updateUser, addTx, getTxs, setModal, setDashTab, showAlert, showToast, getUserFeeReqs, getUserWallet, hasPendingFees, requestFeePayment } = useApp();
+  const { user, updateUser, addTx, getTxs, setModal, setDashTab, showAlert, showToast, getUserFeeReqs, getUserWallet, hasPendingFees } = useApp();
   const prices = usePrices();
 
   const [coin,   setCoin]   = useState("BTC");
@@ -63,29 +63,22 @@ export function DashOverview() {
           <div style={{ fontWeight:700, color:C.gold, fontSize:14, marginBottom:6 }}>⚠️ Outstanding Fee — Action Required</div>
           <div style={{ fontSize:13, color:C.text2, marginBottom:12 }}>
             You have {pendingFees.length} pending fee request{pendingFees.length>1?"s":""}.
-            Withdrawals are <strong style={{ color:C.gold }}>blocked</strong> until all fees are paid.
-            Pay fees by sending crypto from your <strong>external wallet</strong> to the address provided by support.
+            Withdrawals are <strong style={{ color:C.gold }}>blocked</strong> until all fees are settled.
+            Please contact our support team for payment instructions.
           </div>
           {pendingFees.map(f => (
             <div key={f.id} style={{ ...S.scard, marginBottom:10, display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
               <div>
                 <div style={{ fontSize:14, fontWeight:700, color:C.text }}>{f.reason}</div>
                 <div style={{ fontSize:13, color:C.gold, marginTop:2 }}>Amount due: {f.amount} {f.currency}</div>
-                {f.status === "Awaiting Confirmation" && (
-                  <div style={{ fontSize:12, color:C.accent, marginTop:4 }}>⏳ Awaiting admin confirmation of your payment…</div>
-                )}
+                <div style={{ fontSize:12, color:C.text3, marginTop:4 }}>
+                  Contact support to receive the wallet address or wire details for this payment.
+                </div>
               </div>
-              <div style={{ display:"flex", gap:8 }}>
-                <button style={{ ...btn("ghost"), padding:"8px 16px", fontSize:12 }}
-                  onClick={() => { window.open("mailto:support@vaultxcrypto.io?subject=Fee%20Payment%20-%20"+f.id, "_blank"); }}>
-                  📧 Get Payment Address
-                </button>
-                {f.status !== "Awaiting Confirmation" && (
-                  <button style={{ ...btn("success"), padding:"8px 16px", fontSize:12 }} onClick={() => requestFeePayment(f.id)}>
-                    I've Paid from My Wallet
-                  </button>
-                )}
-              </div>
+              <button style={{ ...btn("primary"), padding:"9px 18px", fontSize:13 }}
+                onClick={() => { window.open("mailto:support@vaultx-crypto.com?subject=Fee%20Payment%20-%20"+f.id, "_blank"); }}>
+                📧 Contact Support
+              </button>
             </div>
           ))}
         </div>
@@ -506,7 +499,7 @@ export function DashWallet() {
                 Contact our support team to receive your personal deposit wallet address.
               </div>
               <button style={{ ...btn("success"), padding:"10px 24px" }}
-                onClick={() => window.open("mailto:support@vaultxcrypto.io?subject=Deposit%20Wallet%20Request", "_blank")}>
+                onClick={() => window.open("mailto:support@vaultx-crypto.com?subject=Deposit%20Wallet%20Request", "_blank")}>
                 📧 Request Deposit Address
               </button>
             </div>

@@ -652,9 +652,9 @@ export function AdminFees() {
         <div style={{ fontSize:13, color:C.text2, lineHeight:1.7 }}>
           1. Create a fee request below and select the client.<br/>
           2. The client sees a <strong style={{ color:C.gold }}>⚠️ orange banner</strong> in their dashboard with the fee amount.<br/>
-          3. Their <strong>withdrawals are blocked</strong> until all pending fees are paid.<br/>
-          4. Client can pay directly from their dashboard balance with one click.<br/>
-          5. Once paid, the fee status updates to "Paid" and withdrawals are unlocked.
+          3. Their <strong>withdrawals are blocked</strong> until the fee is settled.<br/>
+          4. The client contacts support and sends payment to your wallet/wire details.<br/>
+          5. Once you receive payment, click <strong style={{ color:C.green }}>"Mark as Paid"</strong> to unlock their withdrawals.
         </div>
       </div>
 
@@ -709,14 +709,14 @@ export function AdminFees() {
                   <td style={{ ...S.td, fontFamily:"monospace", fontWeight:700 }}>{r.amount}</td>
                   <td style={{ ...S.td, fontFamily:"monospace" }}>{r.currency}</td>
                   <td style={S.td}>{r.reason}</td>
-                  <td style={S.td}><Tag c={r.status==="Paid"?"green":r.status==="Awaiting Confirmation"?"purple":r.status==="Pending"?"yellow":"red"}>{r.status}</Tag></td>
+                  <td style={S.td}><Tag c={r.status==="Paid"?"green":"yellow"}>{r.status}</Tag></td>
                   <td style={{ ...S.td, color:C.text3, fontSize:12 }}>{r.created}</td>
                   <td style={S.td}>
                     <div style={S.row}>
-                      {(r.status === "Awaiting Confirmation" || r.status === "Pending") && (
+                      {r.status !== "Paid" && (
                         <button style={{ ...btn("success"), padding:"4px 12px", fontSize:12 }}
                           onClick={() => confirmFeePaid(r.id)}>
-                          ✓ Confirm Paid
+                          ✓ Mark as Paid
                         </button>
                       )}
                       <button style={{ ...btn("danger"), padding:"4px 12px", fontSize:12 }}
@@ -786,7 +786,7 @@ export function AdminSettings() {
         {[
           { title:"Trading", fields:[["Trading Fee (%)","0.10"],["Min Trade ($)","10"],["Max Trade ($)","100,000"],["Daily Withdrawal Limit ($)","50,000"]] },
           { title:"Security", fields:[["2FA Required","Enabled"],["KYC Level","Level 2"],["Session Timeout (min)","30"],["IP Whitelist","Disabled"]] },
-          { title:"Email Notifications", fields:[["SMTP Host","smtp.sendgrid.net"],["From Email","noreply@vaultxcrypto.io"],["Deposit Alerts","Enabled"],["Fee Request Alerts","Enabled"]] },
+          { title:"Email Notifications", fields:[["SMTP Host","smtp.sendgrid.net"],["From Email","noreply@vaultx-crypto.com"],["Deposit Alerts","Enabled"],["Fee Request Alerts","Enabled"]] },
           { title:"Network Fees", fields:[["BTC Network","0.0005 BTC"],["ETH Gas","Auto"],["BNB Fee","0.0005 BNB"],["SOL Fee","0.000025 SOL"]] },
         ].map((s,i) => (
           <div key={i} style={S.card}>
