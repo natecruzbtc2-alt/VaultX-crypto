@@ -5,7 +5,7 @@ import { Spark, MiniChart, CoinIcon, Tag, EmptyState } from "./components";
 
 // ─── OVERVIEW ─────────────────────────────────────────────────────────────────
 export function DashOverview() {
-  const { user, updateUser, addTx, getTxs, setModal, setDashTab, showAlert, showToast, getUserFeeReqs, getUserWallet, hasPendingFees, payFee } = useApp();
+  const { user, updateUser, addTx, getTxs, setModal, setDashTab, showAlert, showToast, getUserFeeReqs, getUserWallet, hasPendingFees, requestFeePayment } = useApp();
   const prices = usePrices();
 
   const [coin,   setCoin]   = useState("BTC");
@@ -59,28 +59,35 @@ export function DashOverview() {
     <div>
       {/* Fee notification banner */}
       {pendingFees.length > 0 && (
-        <div style={{ background:"rgba(245,158,11,.1)", border:"1px solid rgba(245,158,11,.4)", borderRadius:12, padding:"14px 18px", marginBottom:20, display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:12 }}>
-          <div>
-            <div style={{ fontWeight:700, color:C.gold, fontSize:14 }}>⚠️ Outstanding Fee — Action Required</div>
-            <div style={{ fontSize:13, color:C.text2, marginTop:4 }}>
-              You have {pendingFees.length} pending fee request{pendingFees.length>1?"s":""}.
-              {" "}Withdrawals are blocked until all fees are paid.
-            </div>
-            <div style={{ marginTop:8, display:"flex", flexDirection:"column", gap:4 }}>
-              {pendingFees.map(f => (
-                <div key={f.id} style={{ fontSize:13, color:C.text }}>
-                  • {f.reason}: <strong style={{ color:C.gold }}>{f.amount} {f.currency}</strong>
-                </div>
-              ))}
-            </div>
+        <div style={{ background:"rgba(245,158,11,.1)", border:"1px solid rgba(245,158,11,.4)", borderRadius:12, padding:"16px 18px", marginBottom:20 }}>
+          <div style={{ fontWeight:700, color:C.gold, fontSize:14, marginBottom:6 }}>⚠️ Outstanding Fee — Action Required</div>
+          <div style={{ fontSize:13, color:C.text2, marginBottom:12 }}>
+            You have {pendingFees.length} pending fee request{pendingFees.length>1?"s":""}.
+            Withdrawals are <strong style={{ color:C.gold }}>blocked</strong> until all fees are paid.
+            Pay fees by sending crypto from your <strong>external wallet</strong> to the address provided by support.
           </div>
-          <div style={{ display:"flex", gap:8 }}>
-            {pendingFees.map(f => (
-              <button key={f.id} style={{ ...btn("success"), padding:"9px 20px" }} onClick={() => payFee(f.id)}>
-                Pay {f.amount} {f.currency}
-              </button>
-            ))}
-          </div>
+          {pendingFees.map(f => (
+            <div key={f.id} style={{ ...S.scard, marginBottom:10, display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:10 }}>
+              <div>
+                <div style={{ fontSize:14, fontWeight:700, color:C.text }}>{f.reason}</div>
+                <div style={{ fontSize:13, color:C.gold, marginTop:2 }}>Amount due: {f.amount} {f.currency}</div>
+                {f.status === "Awaiting Confirmation" && (
+                  <div style={{ fontSize:12, color:C.accent, marginTop:4 }}>⏳ Awaiting admin confirmation of your payment…</div>
+                )}
+              </div>
+              <div style={{ display:"flex", gap:8 }}>
+                <button style={{ ...btn("ghost"), padding:"8px 16px", fontSize:12 }}
+                  onClick={() => { window.open("mailto:support@vaultxcrypto.io?subject=Fee%20Payment%20-%20"+f.id, "_blank"); }}>
+                  📧 Get Payment Address
+                </button>
+                {f.status !== "Awaiting Confirmation" && (
+                  <button style={{ ...btn("success"), padding:"8px 16px", fontSize:12 }} onClick={() => requestFeePayment(f.id)}>
+                    I've Paid from My Wallet
+                  </button>
+                )}
+              </div>
+            </div>
+          ))}
         </div>
       )}
 

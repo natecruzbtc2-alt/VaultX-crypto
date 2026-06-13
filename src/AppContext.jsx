@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(
@@ -28,13 +28,8 @@ export const fmt = (n, d=2) => typeof n==="number"
   ? n.toLocaleString("en-US", { minimumFractionDigits:d, maximumFractionDigits:d })
   : String(n ?? "");
 
-export const fmtCrypto = (n, sym) => {
-  if (typeof n !== "number") return "0.000000";
-  if (sym === "USDT" || BASE_PRICES[sym] >= 1000) return n.toFixed(6);
-  return n.toFixed(6);
-};
-
-export const coinInfo = sym => COINS.find(c=>c.sym===sym) || COINS[0];
+export const fmtCrypto = (n) => typeof n==="number" ? n.toFixed(6) : "0.000000";
+export const coinInfo  = sym => COINS.find(c=>c.sym===sym) || COINS[0];
 
 function genSparkline(base, n=20) {
   const p = [base];
@@ -52,14 +47,7 @@ export function createHoldings(pf=0) {
   })).filter(h => h.qty > 0);
 }
 
-export function createStaking(pf=0) {
-  if (pf <= 0) return [];
-  return [
-    { sym:"ETH", qty:+((pf*.04)/BASE_PRICES.ETH).toFixed(8), apy:4.8, stakedAt: Date.now() },
-    { sym:"SOL", qty:+((pf*.03)/BASE_PRICES.SOL).toFixed(8), apy:7.2, stakedAt: Date.now() },
-    { sym:"ADA", qty:+((pf*.02)/BASE_PRICES.ADA).toFixed(8), apy:5.1, stakedAt: Date.now() },
-  ].filter(s => s.qty > 0);
-}
+export function createStaking() { return []; }
 
 // ─── CONTEXTS ─────────────────────────────────────────────────────────────────
 export const PriceContext = createContext({});
@@ -74,9 +62,8 @@ export function PriceProvider({ children }) {
       price: BASE_PRICES[c.sym],
       change: +(Math.random()*10-5).toFixed(2),
       spark: genSparkline(BASE_PRICES[c.sym]),
-      high: BASE_PRICES[c.sym] * 1.03,
-      low:  BASE_PRICES[c.sym] * 0.97,
-      vol:  BASE_PRICES[c.sym] * 21000,
+      high: BASE_PRICES[c.sym]*1.03, low: BASE_PRICES[c.sym]*0.97,
+      vol: BASE_PRICES[c.sym]*21000,
     }]))
   );
 
@@ -95,13 +82,11 @@ export function PriceProvider({ children }) {
           r.forEach(([sym, price]) => {
             if (!price || !next[sym]) return;
             const old = next[sym];
-            const change = +((price - old.price) / Math.max(old.price,1) * 100).toFixed(2);
             next[sym] = {
-              price, change,
+              price, change: +((price-old.price)/Math.max(old.price,1)*100).toFixed(2),
               spark: [...old.spark.slice(1), price],
-              high: Math.max(old.high || price, price),
-              low:  Math.min(old.low  || price, price),
-              vol:  old.vol || price * 21000,
+              high: Math.max(old.high||price, price), low: Math.min(old.low||price, price),
+              vol: old.vol || price*21000,
             };
           });
           return next;
@@ -118,13 +103,8 @@ export function PriceProvider({ children }) {
       setPrices(prev => {
         const next = {...prev};
         COINS.forEach(c => {
-          const o = next[c.sym];
-          const p = o.price * (1 + (Math.random()-.495) * .002);
-          next[c.sym] = {
-            ...o, price: p,
-            change: +(o.change + (Math.random()-.495) * .05).toFixed(2),
-            spark: [...o.spark.slice(1), p],
-          };
+          const o = next[c.sym], p = o.price * (1 + (Math.random()-.495)*.002);
+          next[c.sym] = { ...o, price:p, change:+(o.change+(Math.random()-.495)*.05).toFixed(2), spark:[...o.spark.slice(1),p] };
         });
         return next;
       });
@@ -134,6 +114,12 @@ export function PriceProvider({ children }) {
 
   return <PriceContext.Provider value={prices}>{children}</PriceContext.Provider>;
 }
+
+// ─── HELPERS for mapping Supabase rows ────────────────────────────────────────
+const mapUser = (u) => ({ ...u, holdings: u.holdings||[], staking: u.staking||[] });
+const mapPending = (t) => ({ ...t, user: t.user_email || t.user });
+const mapFee = (r) => ({ ...r, user: r.user_email || r.user });
+const mapWallet = (w) => ({ coin:w.coin, address:w.address, network:w.network, walletName:w.wallet_name, fee:w.fee, assignedAt:w.assigned_at });
 
 // ─── APP PROVIDER ─────────────────────────────────────────────────────────────
 export function AppProvider({ children }) {
@@ -145,142 +131,174 @@ export function AppProvider({ children }) {
   const [txHistory, setTxHistory] = useState({});
   const [pending,   setPending]   = useState([]);
   const [feeReqs,   setFeeReqs]   = useState([]);
-  // walletAssignments: { [userEmail]: { coin, address, network, walletName, fee, required } }
   const [walletAssignments, setWalletAssignments] = useState({});
   const [toast,     setToast]     = useState(null);
   const [modal,     setModal]     = useState(null);
   const [alert,     setAlert]     = useState("");
   const [loading,   setLoading]   = useState(true);
 
-  // ── LOAD FROM SUPABASE / LOCALSTORAGE ────────────────────────────────────────
-  useEffect(() => {
-    const load = async () => {
-      try {
-        const [
-          { data: usersData },
-          { data: pendingData },
-          { data: feesData },
-          { data: txData },
-        ] = await Promise.all([
-          supabase.from("vx_users").select("*"),
-          supabase.from("vx_pending").select("*"),
-          supabase.from("vx_fees").select("*"),
-          supabase.from("vx_transactions").select("*").order("date", { ascending: false }),
-        ]);
+  const userRef = useRef(null);
+  useEffect(() => { userRef.current = user; }, [user]);
 
-        if (usersData) setUsers(usersData.map(u => ({
-          ...u,
-          holdings: u.holdings || [],
-          staking:  u.staking  || [],
-        })));
-        if (pendingData && pendingData.length > 0)
-          setPending(pendingData.map(t => ({ ...t, user: t.user_email || t.user })));
-        if (feesData)
-          setFeeReqs(feesData.map(r => ({ ...r, user: r.user_email || r.user })));
-        if (txData) {
-          const hist = {};
-          txData.forEach(tx => {
-            const key = tx.user_email;
-            if (!hist[key]) hist[key] = [];
-            hist[key].push(tx);
-          });
-          setTxHistory(hist);
+  // ── LOAD ALL DATA ────────────────────────────────────────────────────────────
+  const loadAll = useCallback(async () => {
+    try {
+      const [
+        { data: usersData },
+        { data: pendingData },
+        { data: feesData },
+        { data: txData },
+        { data: walletsData },
+      ] = await Promise.all([
+        supabase.from("vx_users").select("*"),
+        supabase.from("vx_pending").select("*"),
+        supabase.from("vx_fees").select("*"),
+        supabase.from("vx_transactions").select("*"),
+        supabase.from("vx_wallets").select("*"),
+      ]);
+
+      if (usersData) {
+        setUsers(usersData.map(mapUser));
+        // refresh current logged-in user
+        const cu = userRef.current;
+        if (cu) {
+          const fresh = usersData.find(u => u.email === cu.email);
+          if (fresh) setUser(mapUser(fresh));
         }
-
-        // Load wallet assignments from localStorage
-        const wa = JSON.parse(localStorage.getItem("vx_wallets") || "{}");
-        setWalletAssignments(wa);
-
-      } catch(e) {
-        // localStorage fallback
-        try {
-          setUsers(JSON.parse(localStorage.getItem("vx_users") || "[]"));
-          setTxHistory(JSON.parse(localStorage.getItem("vx_history") || "{}"));
-          setPending(JSON.parse(localStorage.getItem("vx_pending") || "[]"));
-          setFeeReqs(JSON.parse(localStorage.getItem("vx_fees") || "[]"));
-          setWalletAssignments(JSON.parse(localStorage.getItem("vx_wallets") || "{}"));
-        } catch(e2) {}
       }
-      setLoading(false);
-    };
-    load();
+      if (pendingData) setPending(pendingData.map(mapPending));
+      if (feesData)    setFeeReqs(feesData.map(mapFee));
+      if (txData) {
+        const hist = {};
+        txData.forEach(tx => {
+          if (!hist[tx.user_email]) hist[tx.user_email] = [];
+          hist[tx.user_email].push(tx);
+        });
+        // sort each by id desc (newest first)
+        Object.keys(hist).forEach(k => hist[k].sort((a,b)=>String(b.id).localeCompare(String(a.id))));
+        setTxHistory(hist);
+      }
+      if (walletsData) {
+        const wa = {};
+        walletsData.forEach(w => { wa[w.user_email] = mapWallet(w); });
+        setWalletAssignments(wa);
+      }
+    } catch(e) {
+      console.warn("Load error", e);
+    }
   }, []);
+
+  // ── INITIAL LOAD + REALTIME SUBSCRIPTIONS ─────────────────────────────────────
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      await loadAll();
+      if (mounted) setLoading(false);
+    })();
+
+    // Real-time: reload all data whenever ANY table changes (from any device)
+    const channel = supabase
+      .channel("vx_all_changes")
+      .on("postgres_changes", { event:"*", schema:"public", table:"vx_users" },        () => loadAll())
+      .on("postgres_changes", { event:"*", schema:"public", table:"vx_pending" },      () => loadAll())
+      .on("postgres_changes", { event:"*", schema:"public", table:"vx_fees" },         () => loadAll())
+      .on("postgres_changes", { event:"*", schema:"public", table:"vx_transactions" }, () => loadAll())
+      .on("postgres_changes", { event:"*", schema:"public", table:"vx_wallets" },      () => loadAll())
+      .subscribe();
+
+    // Fallback: also poll every 8 seconds in case realtime isn't enabled
+    const pollId = setInterval(loadAll, 8000);
+
+    return () => {
+      mounted = false;
+      supabase.removeChannel(channel);
+      clearInterval(pollId);
+    };
+  }, [loadAll]);
 
   // ── HELPERS ──────────────────────────────────────────────────────────────────
   const showToast = useCallback((msg, type="info") => {
     setToast({ msg, type }); setTimeout(() => setToast(null), 4000);
   }, []);
-
   const showAlert = useCallback((text) => {
     setAlert(text); setTimeout(() => setAlert(""), 4000);
   }, []);
 
-  // Get pending fee requests for a user
   const getUserFeeReqs = useCallback((email) =>
-    feeReqs.filter(r => (r.user || r.user_email) === email && r.status === "Pending"),
+    feeReqs.filter(r => (r.user||r.user_email) === email && r.status === "Pending"),
   [feeReqs]);
-
-  // Get wallet assignment for a user
-  const getUserWallet = useCallback((email) =>
-    walletAssignments[email] || null,
-  [walletAssignments]);
-
-  // Check if user has unpaid fees
-  const hasPendingFees = useCallback((email) =>
-    getUserFeeReqs(email).length > 0,
-  [getUserFeeReqs]);
-
-  // ── UPDATE USER ───────────────────────────────────────────────────────────────
-  const updateUser = useCallback(async (u) => {
-    setUser(u);
-    setUsers(prev => prev.map(x => x.email === u.email ? u : x));
-    try {
-      await supabase.from("vx_users").upsert({
-        id: u.id, name: u.name, email: u.email, password: u.password,
-        balance: u.balance, portfolio: u.portfolio,
-        holdings: u.holdings, staking: u.staking,
-        joined: u.joined, verified: u.verified,
-        status: u.status, tier: u.tier,
-      });
-    } catch(e) {
-      const all = JSON.parse(localStorage.getItem("vx_users") || "[]").map(x => x.email === u.email ? u : x);
-      localStorage.setItem("vx_users", JSON.stringify(all));
-    }
-  }, []);
-
-  // ── ADD TRANSACTION ───────────────────────────────────────────────────────────
-  const addTx = useCallback(async (email, tx) => {
-    setTxHistory(prev => ({ ...prev, [email]: [tx, ...(prev[email] || [])] }));
-    try {
-      await supabase.from("vx_transactions").insert({
-        id: tx.id, user_email: email, type: tx.type,
-        symbol: tx.symbol, amount: tx.amount, value: tx.value,
-        fee: tx.fee, status: tx.status, date: tx.date,
-        notes: tx.notes || "",
-      });
-    } catch(e) {
-      const hist = JSON.parse(localStorage.getItem("vx_history") || "{}");
-      hist[email] = [tx, ...(hist[email] || [])];
-      localStorage.setItem("vx_history", JSON.stringify(hist));
-    }
-  }, []);
-
+  const getUserWallet = useCallback((email) => walletAssignments[email] || null, [walletAssignments]);
+  const hasPendingFees = useCallback((email) => getUserFeeReqs(email).length > 0, [getUserFeeReqs]);
   const getTxs = useCallback((email) => txHistory[email] || [], [txHistory]);
 
-  // ── SET USERS ─────────────────────────────────────────────────────────────────
+  // ── WRITE OPERATIONS (all go to Supabase, realtime syncs the rest) ───────────
+  const upsertUserRow = async (u) => {
+    await supabase.from("vx_users").upsert({
+      id:u.id, name:u.name, email:u.email, password:u.password,
+      balance:u.balance, portfolio:u.portfolio,
+      holdings:u.holdings||[], staking:u.staking||[],
+      joined:u.joined, verified:u.verified, status:u.status, tier:u.tier,
+    });
+  };
+
+  const updateUser = useCallback(async (u) => {
+    setUser(u);
+    setUsers(prev => prev.map(x => x.email===u.email ? u : x));
+    try { await upsertUserRow(u); } catch(e) {}
+  }, []);
+
+  const addTx = useCallback(async (email, tx) => {
+    setTxHistory(prev => ({ ...prev, [email]: [tx, ...(prev[email]||[])] }));
+    try {
+      await supabase.from("vx_transactions").insert({
+        id:tx.id, user_email:email, type:tx.type, symbol:tx.symbol,
+        amount:tx.amount, value:tx.value, fee:tx.fee,
+        status:tx.status, date:tx.date, notes:tx.notes||"",
+      });
+    } catch(e) {}
+  }, []);
+
+  // Users — write to Supabase, realtime updates other clients
   const setUsersAndSave = useCallback((updater) => {
     setUsers(prev => {
-      const next = typeof updater === "function" ? updater(prev) : updater;
-      localStorage.setItem("vx_users", JSON.stringify(next));
+      const next = typeof updater==="function" ? updater(prev) : updater;
       (async () => {
         try {
-          for (const u of next) {
-            await supabase.from("vx_users").upsert({
-              id: u.id, name: u.name, email: u.email, password: u.password,
-              balance: u.balance, portfolio: u.portfolio,
-              holdings: u.holdings || [], staking: u.staking || [],
-              joined: u.joined, verified: u.verified,
-              status: u.status, tier: u.tier,
+          // Find added/changed and removed
+          const prevEmails = new Set(prev.map(u=>u.email));
+          const nextEmails = new Set(next.map(u=>u.email));
+          // upsert all in next
+          for (const u of next) await upsertUserRow(u);
+          // delete removed
+          for (const u of prev) {
+            if (!nextEmails.has(u.email)) {
+              await supabase.from("vx_users").delete().eq("email", u.email);
+            }
+          }
+        } catch(e) {}
+      })();
+      return next;
+    });
+  }, []);
+
+  // Pending — full sync
+  const setPendingAndSave = useCallback((updater) => {
+    setPending(prev => {
+      const next = typeof updater==="function" ? updater(prev) : updater;
+      (async () => {
+        try {
+          const nextIds = new Set(next.map(t=>t.id));
+          // delete removed
+          for (const t of prev) {
+            if (!nextIds.has(t.id)) await supabase.from("vx_pending").delete().eq("id", t.id);
+          }
+          // upsert all
+          for (const t of next) {
+            await supabase.from("vx_pending").upsert({
+              id:t.id, user_email:t.user||t.user_email,
+              type:t.type, coin:t.coin, amount:t.amount, usd:t.usd, fee:t.fee,
+              submitted:t.submitted, network:t.network,
+              address:t.address||"", status:t.status||"Pending",
             });
           }
         } catch(e) {}
@@ -289,44 +307,22 @@ export function AppProvider({ children }) {
     });
   }, []);
 
-  // ── SET PENDING ───────────────────────────────────────────────────────────────
-  const setPendingAndSave = useCallback((updater) => {
-    setPending(prev => {
-      const next = typeof updater === "function" ? updater(prev) : updater;
-      localStorage.setItem("vx_pending", JSON.stringify(next));
-      (async () => {
-        try {
-          await supabase.from("vx_pending").delete().neq("id", "__none__");
-          if (next.length > 0) {
-            await supabase.from("vx_pending").insert(next.map(t => ({
-              id: t.id, user_email: t.user || t.user_email,
-              type: t.type, coin: t.coin,
-              amount: t.amount, usd: t.usd, fee: t.fee,
-              submitted: t.submitted, network: t.network,
-              status: t.status || "Pending",
-            })));
-          }
-        } catch(e) {}
-      })();
-      return next;
-    });
-  }, []);
-
-  // ── SET FEE REQS ──────────────────────────────────────────────────────────────
+  // Fees — full sync
   const setFeeReqsAndSave = useCallback((updater) => {
     setFeeReqs(prev => {
-      const next = typeof updater === "function" ? updater(prev) : updater;
-      localStorage.setItem("vx_fees", JSON.stringify(next));
+      const next = typeof updater==="function" ? updater(prev) : updater;
       (async () => {
         try {
-          await supabase.from("vx_fees").delete().neq("id", "__none__");
-          if (next.length > 0) {
-            await supabase.from("vx_fees").insert(next.map(r => ({
-              id: r.id, user_email: r.user || r.user_email,
-              amount: r.amount, reason: r.reason,
-              currency: r.currency, created: r.created,
-              status: r.status,
-            })));
+          const nextIds = new Set(next.map(r=>r.id));
+          for (const r of prev) {
+            if (!nextIds.has(r.id)) await supabase.from("vx_fees").delete().eq("id", r.id);
+          }
+          for (const r of next) {
+            await supabase.from("vx_fees").upsert({
+              id:r.id, user_email:r.user||r.user_email,
+              amount:r.amount, reason:r.reason, currency:r.currency,
+              created:r.created, status:r.status,
+            });
           }
         } catch(e) {}
       })();
@@ -334,68 +330,63 @@ export function AppProvider({ children }) {
     });
   }, []);
 
-  // ── ASSIGN WALLET TO USER ─────────────────────────────────────────────────────
-  const assignWallet = useCallback((email, walletData) => {
-    setWalletAssignments(prev => {
-      const next = { ...prev, [email]: walletData };
-      localStorage.setItem("vx_wallets", JSON.stringify(next));
-      return next;
-    });
-    showToast("Wallet assigned to " + email, "success");
+  // Wallet assignment — now in Supabase (synced across devices)
+  const assignWallet = useCallback((email, w) => {
+    setWalletAssignments(prev => ({ ...prev, [email]: w }));
+    (async () => {
+      try {
+        await supabase.from("vx_wallets").upsert({
+          user_email: email, coin:w.coin, address:w.address,
+          network:w.network, wallet_name:w.walletName,
+          fee:w.fee, assigned_at:w.assignedAt,
+        });
+      } catch(e) {}
+    })();
+    showToast("Wallet assigned & synced to cloud", "success");
   }, [showToast]);
 
   const removeWallet = useCallback((email) => {
-    setWalletAssignments(prev => {
-      const next = { ...prev };
-      delete next[email];
-      localStorage.setItem("vx_wallets", JSON.stringify(next));
-      return next;
-    });
+    setWalletAssignments(prev => { const n={...prev}; delete n[email]; return n; });
+    (async () => { try { await supabase.from("vx_wallets").delete().eq("user_email", email); } catch(e) {} })();
   }, []);
 
-  // ── APPROVE WITHDRAWAL (actually deducts from user balance) ──────────────────
-  const approveWithdrawal = useCallback((txId) => {
+  // ── APPROVE WITHDRAWAL ────────────────────────────────────────────────────────
+  const approveWithdrawal = useCallback(async (txId) => {
     const tx = pending.find(t => t.id === txId);
     if (!tx) return;
-    // Deduct from user balance
     const targetEmail = tx.user || tx.user_email;
-    const targetUser = users.find(u => u.email === targetEmail);
+    const targetUser  = users.find(u => u.email === targetEmail);
     if (targetUser) {
-      const newBalance = Math.max(0, +(targetUser.balance - tx.usd).toFixed(2));
+      const newBalance   = Math.max(0, +(targetUser.balance - tx.usd).toFixed(2));
       const newPortfolio = Math.max(0, +(targetUser.portfolio - tx.usd).toFixed(2));
-      const updated = { ...targetUser, balance: newBalance, portfolio: newPortfolio };
-      updateUser(updated);
-      addTx(targetEmail, {
-        id: `WD${Date.now()}`, type: "Withdrawal", symbol: tx.coin,
-        amount: tx.amount, value: tx.usd, fee: tx.fee,
-        status: "Completed", date: new Date().toLocaleDateString(),
-        notes: `Approved by admin. Network: ${tx.network}`,
+      const updated = { ...targetUser, balance:newBalance, portfolio:newPortfolio };
+      await updateUser(updated);
+      await addTx(targetEmail, {
+        id:`WD${Date.now()}`, type:"Withdrawal", symbol:tx.coin,
+        amount:tx.amount, value:tx.usd, fee:tx.fee,
+        status:"Completed", date:new Date().toLocaleDateString(),
+        notes:`Approved by admin. Network: ${tx.network}`,
       });
     }
     setPendingAndSave(prev => prev.filter(t => t.id !== txId));
-    showToast("Withdrawal approved and processed", "success");
+    showToast("Withdrawal approved & processed", "success");
   }, [pending, users, updateUser, addTx, setPendingAndSave, showToast]);
 
-  // ── PAY FEE (user pays pending fee) ──────────────────────────────────────────
-  const payFee = useCallback((feeId) => {
+  // ── PAY FEE — now requires EXTERNAL wallet payment, NOT platform balance ──────
+  // This just marks intent — admin confirms once they receive funds to wallet
+  const requestFeePayment = useCallback((feeId) => {
     const fee = feeReqs.find(r => r.id === feeId);
-    if (!fee || !user) return;
-    const amount = Number(fee.amount);
-    if (user.balance < amount) {
-      showToast("Insufficient balance to pay fee", "info");
-      return;
-    }
-    const updated = { ...user, balance: +(user.balance - amount).toFixed(2) };
-    updateUser(updated);
-    setFeeReqsAndSave(prev => prev.map(r => r.id === feeId ? { ...r, status: "Paid" } : r));
-    addTx(user.email, {
-      id: `FP${Date.now()}`, type: "Fee Payment", symbol: fee.currency || "USD",
-      amount: amount, value: amount, fee: 0,
-      status: "Completed", date: new Date().toLocaleDateString(),
-      notes: fee.reason,
-    });
-    showToast("Fee paid successfully!", "success");
-  }, [feeReqs, user, updateUser, setFeeReqsAndSave, addTx, showToast]);
+    if (!fee) return;
+    // Mark as "Payment Submitted" — awaiting admin confirmation of external transfer
+    setFeeReqsAndSave(prev => prev.map(r => r.id===feeId ? { ...r, status:"Awaiting Confirmation" } : r));
+    showToast("Mark the fee as paid once you've sent funds from your external wallet. Admin will confirm receipt.", "info");
+  }, [feeReqs, setFeeReqsAndSave, showToast]);
+
+  // Admin confirms they received the external fee payment
+  const confirmFeePaid = useCallback((feeId) => {
+    setFeeReqsAndSave(prev => prev.map(r => r.id===feeId ? { ...r, status:"Paid" } : r));
+    showToast("Fee marked as paid — client withdrawals unlocked", "success");
+  }, [setFeeReqsAndSave, showToast]);
 
   const removePending = useCallback((id, label="Transaction") => {
     setPendingAndSave(prev => prev.filter(t => t.id !== id));
@@ -410,30 +401,26 @@ export function AppProvider({ children }) {
     return (
       <div style={{ background:"#07050f", minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16 }}>
         <div style={{ width:44, height:44, borderRadius:"50%", border:"3px solid rgba(138,43,226,.2)", borderTopColor:"#a855f7", animation:"spin 0.8s linear infinite" }}/>
-        <div style={{ color:"#9d8ec4", fontSize:14, fontFamily:"'DM Sans',sans-serif" }}>Loading VaultX…</div>
+        <div style={{ color:"#9d8ec4", fontSize:14, fontFamily:"'DM Sans',sans-serif" }}>Connecting to VaultX cloud…</div>
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       </div>
     );
   }
 
   const value = {
-    view, setView,
-    user, setUser,
-    dashTab, setDashTab,
-    adminTab, setAdminTab,
+    view, setView, user, setUser, dashTab, setDashTab, adminTab, setAdminTab,
     users, setUsers: setUsersAndSave,
     txHistory, setTxHistory,
     pending, setPending: setPendingAndSave,
     feeReqs, setFeeReqs: setFeeReqsAndSave,
     walletAssignments, assignWallet, removeWallet,
-    toast, setToast,
-    modal, setModal,
-    alert, setAlert,
+    toast, setToast, modal, setModal, alert, setAlert,
     showToast, showAlert,
     updateUser, addTx, getTxs,
     getUserFeeReqs, getUserWallet, hasPendingFees,
     removePending, doLogout,
-    approveWithdrawal, payFee,
+    approveWithdrawal, requestFeePayment, confirmFeePaid,
+    refreshData: loadAll,
     supabase,
   };
 

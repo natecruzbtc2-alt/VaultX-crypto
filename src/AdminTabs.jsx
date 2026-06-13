@@ -156,10 +156,9 @@ export function AdminDeposits() {
     setUsers(updated);
     if (currentUser && currentUser.email === target) setUser(updated[idx]);
 
-const depositQty = +(amount / (BASE_PRICES[form.coin] || 1)).toFixed(8);
     const tx = {
       id: `DP${Date.now()}`, user: target, type:"Deposit", coin: form.coin,
-      amount: depositQty, usd: amount, fee: +(amount*.001).toFixed(2),
+      amount: qty, usd: amount, fee: +(amount*.001).toFixed(2),
       submitted: new Date().toLocaleString(), network: form.network, status:"Completed",
     };
     setPending(prev => [tx, ...prev]);
@@ -603,7 +602,7 @@ export function AdminPending() {
 
 // ─── ADMIN FEES ───────────────────────────────────────────────────────────────
 export function AdminFees() {
-  const { users, feeReqs, setFeeReqs, pending, showAlert, showToast } = useApp();
+  const { users, feeReqs, setFeeReqs, pending, showAlert, showToast, confirmFeePaid } = useApp();
   const [form, setForm] = useState({ user:"", amount:"", reason:"Service fee", currency:"USD" });
   const rev = pending.reduce((a,b)=>a+(b.fee||0),0) * .6;
 
@@ -710,13 +709,21 @@ export function AdminFees() {
                   <td style={{ ...S.td, fontFamily:"monospace", fontWeight:700 }}>{r.amount}</td>
                   <td style={{ ...S.td, fontFamily:"monospace" }}>{r.currency}</td>
                   <td style={S.td}>{r.reason}</td>
-                  <td style={S.td}><Tag c={r.status==="Paid"?"green":r.status==="Pending"?"yellow":"red"}>{r.status}</Tag></td>
+                  <td style={S.td}><Tag c={r.status==="Paid"?"green":r.status==="Awaiting Confirmation"?"purple":r.status==="Pending"?"yellow":"red"}>{r.status}</Tag></td>
                   <td style={{ ...S.td, color:C.text3, fontSize:12 }}>{r.created}</td>
                   <td style={S.td}>
-                    <button style={{ ...btn("danger"), padding:"4px 12px", fontSize:12 }}
-                      onClick={() => { setFeeReqs(prev=>prev.filter(x=>x.id!==r.id)); showToast("Removed","info"); }}>
-                      Remove
-                    </button>
+                    <div style={S.row}>
+                      {(r.status === "Awaiting Confirmation" || r.status === "Pending") && (
+                        <button style={{ ...btn("success"), padding:"4px 12px", fontSize:12 }}
+                          onClick={() => confirmFeePaid(r.id)}>
+                          ✓ Confirm Paid
+                        </button>
+                      )}
+                      <button style={{ ...btn("danger"), padding:"4px 12px", fontSize:12 }}
+                        onClick={() => { setFeeReqs(prev=>prev.filter(x=>x.id!==r.id)); showToast("Removed","info"); }}>
+                        Remove
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
