@@ -7,7 +7,7 @@ export const C = {
 };
 
 export const S = {
-  app:  { fontFamily:"'DM Sans',system-ui,sans-serif", background:"#0a0a0a", color:C.text, minHeight:"100vh", fontSize:14, lineHeight:1.5 },
+  app:  { fontFamily:"'DM Sans',system-ui,sans-serif", background:"#0a0a0a", color:C.text, minHeight:"100vh", fontSize:14, lineHeight:1.5, position:"relative", isolation:"isolate" },
   nav:  { background:"rgba(10,10,10,.92)", backdropFilter:"blur(24px)", borderBottom:`1px solid ${C.border}`, padding:"0 24px", height:62, display:"flex", alignItems:"center", justifyContent:"space-between", position:"sticky", top:0, zIndex:100 },
   logo: { display:"flex", alignItems:"center", gap:10, fontSize:17, fontWeight:800, letterSpacing:"-.5px", cursor:"pointer", textTransform:"uppercase", color:C.text },
   logoMark: { width:38, height:38, background:`linear-gradient(135deg,#e6b400,#ffd633)`, borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, fontWeight:900, color:"#0a0a0a", boxShadow:`0 0 28px rgba(255,200,0,.5)` },

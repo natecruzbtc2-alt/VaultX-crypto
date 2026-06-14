@@ -39,7 +39,7 @@ export function LandingPage() {
   return (
     <div style={{ ...S.app, position:"relative" }}>
       <CryptoBackground />
-      <div style={{ position:"relative", zIndex:1 }}>
+      <div style={{ position:"relative", zIndex:2 }}>
       <style>{globalCSS}</style>
       <NavBar />
       <TickerBar />
@@ -192,7 +192,7 @@ export function LoginPage() {
   return (
     <div style={{ ...S.app, position:"relative" }}>
       <CryptoBackground />
-      <div style={{ position:"relative", zIndex:1 }}>
+      <div style={{ position:"relative", zIndex:2 }}>
       <style>{globalCSS}</style>
       <nav style={S.nav}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} onClick={() => setView("landing")}>
@@ -288,7 +288,7 @@ export function RegisterPage() {
   return (
     <div style={{ ...S.app, position:"relative" }}>
       <CryptoBackground />
-      <div style={{ position:"relative", zIndex:1 }}>
+      <div style={{ position:"relative", zIndex:2 }}>
       <style>{globalCSS}</style>
       <nav style={S.nav}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} onClick={() => setView("landing")}>
