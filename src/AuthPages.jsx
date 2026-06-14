@@ -1,6 +1,6 @@
 import { Footer } from "./Pages";
 import { useState, useCallback } from "react";
-import { useApp, ADMIN_CREDS, createHoldings, createStaking, usePrices, COINS, fmt } from "./AppContext";
+import { useApp, createHoldings, createStaking, usePrices, COINS, fmt } from "./AppContext";
 import { C, S, btn, globalCSS } from "./theme";
 import { TickerBar, Spark } from "./components";
 import CryptoBackground from "./CryptoBackground";
@@ -164,7 +164,7 @@ export function LandingPage() {
 }
 
 export function LoginPage() {
-  const { setView, users, showToast, showAlert, alert, setUser, setDashTab } = useApp();
+  const { setView, showToast, showAlert, alert, setUser, setDashTab, loginUser, checkAdminCreds } = useApp();
   const [email,     setEmail]     = useState("");
   const [password,  setPassword]  = useState("");
   const [adminMode, setAdminMode] = useState(false);
@@ -173,15 +173,16 @@ export function LoginPage() {
 
   const doLogin = useCallback(() => {
     if (!email || !password) { showAlert("Fill in all fields"); return; }
-    const u = users.find(u => u.email === email);
-    if (!u) { showAlert("User not found"); return; }
-    if (u.password && u.password !== password) { showAlert("Invalid credentials"); return; }
-    setUser(u); setView("dashboard"); setDashTab("overview");
-    showToast("Welcome back, " + u.name.split(" ")[0] + "!", "success");
-  }, [email, password, users, showAlert, showToast, setUser, setView, setDashTab]);
+    const result = loginUser(email, password);
+    if (!result.success) { showAlert(result.error); return; }
+    setUser(result.user);
+    setView("dashboard");
+    setDashTab("overview");
+    showToast("Welcome back, " + result.user.name.split(" ")[0] + "! 👋", "success");
+  }, [email, password, loginUser, showAlert, showToast, setUser, setView, setDashTab]);
 
   const doAdminLogin = useCallback(() => {
-    if (adminUser !== ADMIN_CREDS.username || adminPw !== ADMIN_CREDS.password) {
+    if (!checkAdminCreds(adminUser, adminPw)) {
       showAlert("Invalid admin credentials"); return;
     }
     setView("admin");
@@ -250,32 +251,39 @@ export function LoginPage() {
 }
 
 export function RegisterPage() {
-  const { setView, users, setUsers, showToast, showAlert, alert } = useApp();
+  const { setView, users, registerUser, showToast, showAlert, alert } = useApp();
   const [name,     setName]     = useState("");
   const [email,    setEmail]    = useState("");
   const [password, setPassword] = useState("");
   const [confirm,  setConfirm]  = useState("");
   const [agreed,   setAgreed]   = useState(false);
+  const [saving,   setSaving]   = useState(false);
 
-  const doRegister = useCallback(() => {
+  const doRegister = useCallback(async () => {
     if (!name || !email || !password || !confirm) { showAlert("All fields required"); return; }
     if (password !== confirm) { showAlert("Passwords don't match"); return; }
     if (password.length < 6) { showAlert("Password must be at least 6 characters"); return; }
     if (!agreed) { showAlert("Please accept the Terms of Service to continue"); return; }
     if (users.some(u => u.email === email)) { showAlert("Email already registered"); return; }
+    setSaving(true);
     const nu = {
       id: `U${String(users.length + 1).padStart(4, "0")}`,
-      name, email, password,
+      name, email, rawPassword: password,
       balance: 0, portfolio: 0,
       holdings: createHoldings(0),
       staking: createStaking(0),
       joined: new Date().toLocaleDateString(),
       verified: true, status: "Active", tier: "Basic",
     };
-    setUsers(prev => [...prev, nu]);
-    showToast("Account created! Please sign in.", "success");
-    setView("login");
-  }, [name, email, password, confirm, agreed, users, setUsers, showAlert, showToast, setView]);
+    const result = await registerUser(nu);
+    setSaving(false);
+    if (result.success) {
+      showToast("Account created! Please sign in.", "success");
+      setView("login");
+    } else {
+      showAlert("Registration failed. Please try again.");
+    }
+  }, [name, email, password, confirm, agreed, users, registerUser, showAlert, showToast, setView]);
 
   return (
     <div style={{ ...S.app, position:"relative" }}>
@@ -320,7 +328,9 @@ export function RegisterPage() {
               . I confirm I am 18+ years old.
             </label>
           </div>
-          <button style={{ ...btn(), width: "100%", padding: "13px", fontSize: 15 }} onClick={doRegister}>Create Account →</button>
+          <button style={{ ...btn(), width: "100%", padding: "13px", fontSize: 15, opacity: saving ? .7 : 1 }} onClick={doRegister} disabled={saving}>
+            {saving ? "Creating Account…" : "Create Account →"}
+          </button>
           <div style={{ textAlign: "center", fontSize: 13, color: C.text3, marginTop: 20 }}>
             Already have an account?{" "}<span style={{ color: C.purple3, cursor: "pointer", fontWeight: 600 }} onClick={() => setView("login")}>Sign in</span>
           </div>

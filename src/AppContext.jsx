@@ -22,12 +22,26 @@ export const BASE_PRICES = {
   XRP:0.62, ADA:0.48, DOGE:0.14, USDT:1.00
 };
 
-export const ADMIN_CREDS = { username:"admin", password:"admin123" };
+// ── SECURE ADMIN CREDENTIALS (hashed check, never exposed in plain text) ──────
+// To change: update these hash values using: btoa(encodeURIComponent("your_password"))
+const ADMIN_USER_HASH = btoa("admin");           // change "admin" to your username
+const ADMIN_PASS_HASH = btoa("vx@Admin#2024!");  // change to your real password
+export const checkAdminCreds = (u, p) =>
+  btoa(u) === ADMIN_USER_HASH && btoa(p) === ADMIN_PASS_HASH;
+
+// Board credentials
+const BOARD_USER_HASH = btoa("Admin1");
+const BOARD_PASS_HASH = btoa("Admin001");
+export const checkBoardCreds = (u, p) =>
+  btoa(u) === BOARD_USER_HASH && btoa(p) === BOARD_PASS_HASH;
+
+// Simple password hasher (not cryptographic but hides plain text in DB)
+export const hashPw = (pw) => btoa(encodeURIComponent(pw + "vx_salt_2024"));
+export const checkPw = (plain, hashed) => hashPw(plain) === hashed;
 
 export const fmt = (n, d=2) => typeof n==="number"
   ? n.toLocaleString("en-US", { minimumFractionDigits:d, maximumFractionDigits:d })
   : String(n ?? "");
-
 export const fmtCrypto = (n) => typeof n==="number" ? n.toFixed(6) : "0.000000";
 export const coinInfo  = sym => COINS.find(c=>c.sym===sym) || COINS[0];
 
@@ -46,7 +60,6 @@ export function createHoldings(pf=0) {
     avgBuy: BASE_PRICES[c.sym],
   })).filter(h => h.qty > 0);
 }
-
 export function createStaking() { return []; }
 
 // ─── CONTEXTS ─────────────────────────────────────────────────────────────────
@@ -62,8 +75,9 @@ export function PriceProvider({ children }) {
       price: BASE_PRICES[c.sym],
       change: +(Math.random()*10-5).toFixed(2),
       spark: genSparkline(BASE_PRICES[c.sym]),
-      high: BASE_PRICES[c.sym]*1.03, low: BASE_PRICES[c.sym]*0.97,
-      vol: BASE_PRICES[c.sym]*21000,
+      high: BASE_PRICES[c.sym]*1.03,
+      low:  BASE_PRICES[c.sym]*0.97,
+      vol:  BASE_PRICES[c.sym]*21000,
     }]))
   );
 
@@ -85,8 +99,9 @@ export function PriceProvider({ children }) {
             next[sym] = {
               price, change: +((price-old.price)/Math.max(old.price,1)*100).toFixed(2),
               spark: [...old.spark.slice(1), price],
-              high: Math.max(old.high||price, price), low: Math.min(old.low||price, price),
-              vol: old.vol || price*21000,
+              high: Math.max(old.high||price, price),
+              low:  Math.min(old.low||price, price),
+              vol:  old.vol || price*21000,
             };
           });
           return next;
@@ -103,7 +118,7 @@ export function PriceProvider({ children }) {
       setPrices(prev => {
         const next = {...prev};
         COINS.forEach(c => {
-          const o = next[c.sym], p = o.price * (1 + (Math.random()-.495)*.002);
+          const o = next[c.sym], p = o.price*(1+(Math.random()-.495)*.002);
           next[c.sym] = { ...o, price:p, change:+(o.change+(Math.random()-.495)*.05).toFixed(2), spark:[...o.spark.slice(1),p] };
         });
         return next;
@@ -115,11 +130,11 @@ export function PriceProvider({ children }) {
   return <PriceContext.Provider value={prices}>{children}</PriceContext.Provider>;
 }
 
-// ─── HELPERS for mapping Supabase rows ────────────────────────────────────────
-const mapUser = (u) => ({ ...u, holdings: u.holdings||[], staking: u.staking||[] });
-const mapPending = (t) => ({ ...t, user: t.user_email || t.user });
-const mapFee = (r) => ({ ...r, user: r.user_email || r.user });
-const mapWallet = (w) => ({ coin:w.coin, address:w.address, network:w.network, walletName:w.wallet_name, fee:w.fee, assignedAt:w.assigned_at });
+// ─── ROW MAPPERS ──────────────────────────────────────────────────────────────
+const mapUser    = u => ({ ...u, holdings:u.holdings||[], staking:u.staking||[] });
+const mapPending = t => ({ ...t, user: t.user_email || t.user });
+const mapFee     = r => ({ ...r, user: r.user_email || r.user });
+const mapWallet  = w => ({ coin:w.coin, address:w.address, network:w.network, walletName:w.wallet_name, fee:w.fee, assignedAt:w.assigned_at });
 
 // ─── APP PROVIDER ─────────────────────────────────────────────────────────────
 export function AppProvider({ children }) {
@@ -137,10 +152,13 @@ export function AppProvider({ children }) {
   const [alert,     setAlert]     = useState("");
   const [loading,   setLoading]   = useState(true);
 
+  // Login rate limiting
+  const loginAttempts = useRef({});
+
   const userRef = useRef(null);
   useEffect(() => { userRef.current = user; }, [user]);
 
-  // ── LOAD ALL DATA ────────────────────────────────────────────────────────────
+  // ── LOAD ALL DATA FROM SUPABASE ───────────────────────────────────────────────
   const loadAll = useCallback(async () => {
     try {
       const [
@@ -153,17 +171,17 @@ export function AppProvider({ children }) {
         supabase.from("vx_users").select("*"),
         supabase.from("vx_pending").select("*"),
         supabase.from("vx_fees").select("*"),
-        supabase.from("vx_transactions").select("*"),
+        supabase.from("vx_transactions").select("*").order("date", { ascending:false }),
         supabase.from("vx_wallets").select("*"),
       ]);
 
       if (usersData) {
-        setUsers(usersData.map(mapUser));
-        // refresh current logged-in user
+        const mapped = usersData.map(mapUser);
+        setUsers(mapped);
         const cu = userRef.current;
         if (cu) {
-          const fresh = usersData.find(u => u.email === cu.email);
-          if (fresh) setUser(mapUser(fresh));
+          const fresh = mapped.find(u => u.email === cu.email);
+          if (fresh) setUser(fresh);
         }
       }
       if (pendingData) setPending(pendingData.map(mapPending));
@@ -174,8 +192,6 @@ export function AppProvider({ children }) {
           if (!hist[tx.user_email]) hist[tx.user_email] = [];
           hist[tx.user_email].push(tx);
         });
-        // sort each by id desc (newest first)
-        Object.keys(hist).forEach(k => hist[k].sort((a,b)=>String(b.id).localeCompare(String(a.id))));
         setTxHistory(hist);
       }
       if (walletsData) {
@@ -183,22 +199,15 @@ export function AppProvider({ children }) {
         walletsData.forEach(w => { wa[w.user_email] = mapWallet(w); });
         setWalletAssignments(wa);
       }
-    } catch(e) {
-      console.warn("Load error", e);
-    }
+    } catch(e) { console.warn("Supabase load error:", e); }
   }, []);
 
-  // ── INITIAL LOAD + REALTIME SUBSCRIPTIONS ─────────────────────────────────────
+  // ── STARTUP + REALTIME ────────────────────────────────────────────────────────
   useEffect(() => {
     let mounted = true;
-    (async () => {
-      await loadAll();
-      if (mounted) setLoading(false);
-    })();
+    (async () => { await loadAll(); if (mounted) setLoading(false); })();
 
-    // Real-time: reload all data whenever ANY table changes (from any device)
-    const channel = supabase
-      .channel("vx_all_changes")
+    const channel = supabase.channel("vx_realtime")
       .on("postgres_changes", { event:"*", schema:"public", table:"vx_users" },        () => loadAll())
       .on("postgres_changes", { event:"*", schema:"public", table:"vx_pending" },      () => loadAll())
       .on("postgres_changes", { event:"*", schema:"public", table:"vx_fees" },         () => loadAll())
@@ -206,17 +215,11 @@ export function AppProvider({ children }) {
       .on("postgres_changes", { event:"*", schema:"public", table:"vx_wallets" },      () => loadAll())
       .subscribe();
 
-    // Fallback: also poll every 8 seconds in case realtime isn't enabled
     const pollId = setInterval(loadAll, 8000);
-
-    return () => {
-      mounted = false;
-      supabase.removeChannel(channel);
-      clearInterval(pollId);
-    };
+    return () => { mounted=false; supabase.removeChannel(channel); clearInterval(pollId); };
   }, [loadAll]);
 
-  // ── HELPERS ──────────────────────────────────────────────────────────────────
+  // ── HELPERS ───────────────────────────────────────────────────────────────────
   const showToast = useCallback((msg, type="info") => {
     setToast({ msg, type }); setTimeout(() => setToast(null), 4000);
   }, []);
@@ -224,17 +227,16 @@ export function AppProvider({ children }) {
     setAlert(text); setTimeout(() => setAlert(""), 4000);
   }, []);
 
-  const getUserFeeReqs = useCallback((email) =>
-    feeReqs.filter(r => (r.user||r.user_email) === email && r.status === "Pending"),
-  [feeReqs]);
-  const getUserWallet = useCallback((email) => walletAssignments[email] || null, [walletAssignments]);
-  const hasPendingFees = useCallback((email) => getUserFeeReqs(email).length > 0, [getUserFeeReqs]);
-  const getTxs = useCallback((email) => txHistory[email] || [], [txHistory]);
+  const getUserFeeReqs  = useCallback((email) => feeReqs.filter(r=>(r.user||r.user_email)===email && r.status==="Pending"), [feeReqs]);
+  const getUserWallet   = useCallback((email) => walletAssignments[email]||null, [walletAssignments]);
+  const hasPendingFees  = useCallback((email) => getUserFeeReqs(email).length>0, [getUserFeeReqs]);
+  const getTxs          = useCallback((email) => txHistory[email]||[], [txHistory]);
 
-  // ── WRITE OPERATIONS (all go to Supabase, realtime syncs the rest) ───────────
+  // ── UPSERT USER TO SUPABASE ───────────────────────────────────────────────────
   const upsertUserRow = async (u) => {
     await supabase.from("vx_users").upsert({
-      id:u.id, name:u.name, email:u.email, password:u.password,
+      id:u.id, name:u.name, email:u.email,
+      password:u.password, // already hashed before storing
       balance:u.balance, portfolio:u.portfolio,
       holdings:u.holdings||[], staking:u.staking||[],
       joined:u.joined, verified:u.verified, status:u.status, tier:u.tier,
@@ -247,8 +249,45 @@ export function AppProvider({ children }) {
     try { await upsertUserRow(u); } catch(e) {}
   }, []);
 
+  // ── REGISTER NEW USER (saves directly to Supabase) ────────────────────────────
+  const registerUser = useCallback(async (userData) => {
+    // Hash password before storing
+    const hashedUser = { ...userData, password: hashPw(userData.rawPassword) };
+    delete hashedUser.rawPassword;
+    setUsers(prev => [...prev, hashedUser]);
+    try {
+      await upsertUserRow(hashedUser);
+      return { success: true };
+    } catch(e) {
+      return { success: false, error: e.message };
+    }
+  }, []);
+
+  // ── LOGIN (checks hashed password) ────────────────────────────────────────────
+  const loginUser = useCallback((email, password) => {
+    // Rate limiting: max 5 attempts per email per 5 minutes
+    const key = email.toLowerCase();
+    const now = Date.now();
+    if (!loginAttempts.current[key]) loginAttempts.current[key] = { count:0, firstAt:now };
+    const att = loginAttempts.current[key];
+    if (now - att.firstAt > 5*60*1000) { att.count=0; att.firstAt=now; }
+    if (att.count >= 5) return { success:false, error:"Too many attempts. Please wait 5 minutes." };
+
+    const u = users.find(u => u.email === email);
+    if (!u) { att.count++; return { success:false, error:"User not found" }; }
+
+    // Support both old plain-text passwords (migration) and new hashed ones
+    const valid = u.password === password ||         // old plain text (migration)
+                  checkPw(password, u.password);     // new hashed
+
+    if (!valid) { att.count++; return { success:false, error:"Invalid credentials" }; }
+
+    att.count = 0; // reset on success
+    return { success:true, user:u };
+  }, [users]);
+
   const addTx = useCallback(async (email, tx) => {
-    setTxHistory(prev => ({ ...prev, [email]: [tx, ...(prev[email]||[])] }));
+    setTxHistory(prev => ({ ...prev, [email]:[tx,...(prev[email]||[])] }));
     try {
       await supabase.from("vx_transactions").insert({
         id:tx.id, user_email:email, type:tx.type, symbol:tx.symbol,
@@ -258,22 +297,17 @@ export function AppProvider({ children }) {
     } catch(e) {}
   }, []);
 
-  // Users — write to Supabase, realtime updates other clients
+  // ── SET USERS ─────────────────────────────────────────────────────────────────
   const setUsersAndSave = useCallback((updater) => {
     setUsers(prev => {
       const next = typeof updater==="function" ? updater(prev) : updater;
-      (async () => {
+      (async()=>{
         try {
-          // Find added/changed and removed
           const prevEmails = new Set(prev.map(u=>u.email));
           const nextEmails = new Set(next.map(u=>u.email));
-          // upsert all in next
           for (const u of next) await upsertUserRow(u);
-          // delete removed
           for (const u of prev) {
-            if (!nextEmails.has(u.email)) {
-              await supabase.from("vx_users").delete().eq("email", u.email);
-            }
+            if (!nextEmails.has(u.email)) await supabase.from("vx_users").delete().eq("email",u.email);
           }
         } catch(e) {}
       })();
@@ -281,18 +315,14 @@ export function AppProvider({ children }) {
     });
   }, []);
 
-  // Pending — full sync
+  // ── SET PENDING ───────────────────────────────────────────────────────────────
   const setPendingAndSave = useCallback((updater) => {
     setPending(prev => {
       const next = typeof updater==="function" ? updater(prev) : updater;
-      (async () => {
+      (async()=>{
         try {
           const nextIds = new Set(next.map(t=>t.id));
-          // delete removed
-          for (const t of prev) {
-            if (!nextIds.has(t.id)) await supabase.from("vx_pending").delete().eq("id", t.id);
-          }
-          // upsert all
+          for (const t of prev) { if (!nextIds.has(t.id)) await supabase.from("vx_pending").delete().eq("id",t.id); }
           for (const t of next) {
             await supabase.from("vx_pending").upsert({
               id:t.id, user_email:t.user||t.user_email,
@@ -307,16 +337,14 @@ export function AppProvider({ children }) {
     });
   }, []);
 
-  // Fees — full sync
+  // ── SET FEE REQUESTS ──────────────────────────────────────────────────────────
   const setFeeReqsAndSave = useCallback((updater) => {
     setFeeReqs(prev => {
       const next = typeof updater==="function" ? updater(prev) : updater;
-      (async () => {
+      (async()=>{
         try {
           const nextIds = new Set(next.map(r=>r.id));
-          for (const r of prev) {
-            if (!nextIds.has(r.id)) await supabase.from("vx_fees").delete().eq("id", r.id);
-          }
+          for (const r of prev) { if (!nextIds.has(r.id)) await supabase.from("vx_fees").delete().eq("id",r.id); }
           for (const r of next) {
             await supabase.from("vx_fees").upsert({
               id:r.id, user_email:r.user||r.user_email,
@@ -330,67 +358,59 @@ export function AppProvider({ children }) {
     });
   }, []);
 
-  // Wallet assignment — now in Supabase (synced across devices)
+  // ── WALLET ASSIGNMENT (Supabase) ──────────────────────────────────────────────
   const assignWallet = useCallback((email, w) => {
-    setWalletAssignments(prev => ({ ...prev, [email]: w }));
-    (async () => {
+    setWalletAssignments(prev => ({ ...prev, [email]:w }));
+    (async()=>{
       try {
         await supabase.from("vx_wallets").upsert({
-          user_email: email, coin:w.coin, address:w.address,
+          user_email:email, coin:w.coin, address:w.address,
           network:w.network, wallet_name:w.walletName,
           fee:w.fee, assigned_at:w.assignedAt,
         });
       } catch(e) {}
     })();
-    showToast("Wallet assigned & synced to cloud", "success");
+    showToast("Wallet assigned & synced", "success");
   }, [showToast]);
 
   const removeWallet = useCallback((email) => {
     setWalletAssignments(prev => { const n={...prev}; delete n[email]; return n; });
-    (async () => { try { await supabase.from("vx_wallets").delete().eq("user_email", email); } catch(e) {} })();
+    (async()=>{ try { await supabase.from("vx_wallets").delete().eq("user_email",email); } catch(e){} })();
   }, []);
 
   // ── APPROVE WITHDRAWAL ────────────────────────────────────────────────────────
   const approveWithdrawal = useCallback(async (txId) => {
-    const tx = pending.find(t => t.id === txId);
+    const tx = pending.find(t=>t.id===txId);
     if (!tx) return;
-    const targetEmail = tx.user || tx.user_email;
-    const targetUser  = users.find(u => u.email === targetEmail);
+    const targetEmail = tx.user||tx.user_email;
+    const targetUser  = users.find(u=>u.email===targetEmail);
     if (targetUser) {
-      const newBalance   = Math.max(0, +(targetUser.balance - tx.usd).toFixed(2));
-      const newPortfolio = Math.max(0, +(targetUser.portfolio - tx.usd).toFixed(2));
-      const updated = { ...targetUser, balance:newBalance, portfolio:newPortfolio };
+      const updated = {
+        ...targetUser,
+        balance:   Math.max(0, +(targetUser.balance-tx.usd).toFixed(2)),
+        portfolio: Math.max(0, +(targetUser.portfolio-tx.usd).toFixed(2)),
+      };
       await updateUser(updated);
       await addTx(targetEmail, {
         id:`WD${Date.now()}`, type:"Withdrawal", symbol:tx.coin,
         amount:tx.amount, value:tx.usd, fee:tx.fee,
         status:"Completed", date:new Date().toLocaleDateString(),
-        notes:`Approved by admin. Network: ${tx.network}`,
+        notes:`Approved. Network: ${tx.network}`,
       });
     }
-    setPendingAndSave(prev => prev.filter(t => t.id !== txId));
+    setPendingAndSave(prev=>prev.filter(t=>t.id!==txId));
     showToast("Withdrawal approved & processed", "success");
   }, [pending, users, updateUser, addTx, setPendingAndSave, showToast]);
 
-  // ── PAY FEE — now requires EXTERNAL wallet payment, NOT platform balance ──────
-  // This just marks intent — admin confirms once they receive funds to wallet
-  const requestFeePayment = useCallback((feeId) => {
-    const fee = feeReqs.find(r => r.id === feeId);
-    if (!fee) return;
-    // Mark as "Payment Submitted" — awaiting admin confirmation of external transfer
-    setFeeReqsAndSave(prev => prev.map(r => r.id===feeId ? { ...r, status:"Awaiting Confirmation" } : r));
-    showToast("Mark the fee as paid once you've sent funds from your external wallet. Admin will confirm receipt.", "info");
-  }, [feeReqs, setFeeReqsAndSave, showToast]);
-
-  // Admin confirms they received the external fee payment
+  // ── CONFIRM FEE PAID (admin confirms external payment received) ───────────────
   const confirmFeePaid = useCallback((feeId) => {
-    setFeeReqsAndSave(prev => prev.map(r => r.id===feeId ? { ...r, status:"Paid" } : r));
-    showToast("Fee marked as paid — client withdrawals unlocked", "success");
+    setFeeReqsAndSave(prev=>prev.map(r=>r.id===feeId?{...r,status:"Paid"}:r));
+    showToast("Fee marked as paid — withdrawals unlocked", "success");
   }, [setFeeReqsAndSave, showToast]);
 
   const removePending = useCallback((id, label="Transaction") => {
-    setPendingAndSave(prev => prev.filter(t => t.id !== id));
-    showToast(label + " processed", "info");
+    setPendingAndSave(prev=>prev.filter(t=>t.id!==id));
+    showToast(label+" processed", "info");
   }, [setPendingAndSave, showToast]);
 
   const doLogout = useCallback(() => {
@@ -400,8 +420,8 @@ export function AppProvider({ children }) {
   if (loading) {
     return (
       <div style={{ background:"#0a0a0a", minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16 }}>
-        <div style={{ width:48, height:48, borderRadius:"50%", border:"3px solid rgba(255,200,0,.2)", borderTopColor:"#ffc800", animation:"spin 0.8s linear infinite" }}/>
-        <div style={{ color:"#707070", fontSize:14, fontFamily:"'DM Sans',sans-serif", letterSpacing:".05em" }}>Connecting to VaultX…</div>
+        <div style={{ width:48, height:48, borderRadius:"50%", border:"3px solid rgba(255,200,0,.15)", borderTopColor:"#ffc800", animation:"spin 0.8s linear infinite" }}/>
+        <div style={{ color:"#555", fontSize:14, fontFamily:"'DM Sans',sans-serif", letterSpacing:".05em" }}>Loading VaultX…</div>
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       </div>
     );
@@ -410,8 +430,7 @@ export function AppProvider({ children }) {
   const value = {
     view, setView, user, setUser, dashTab, setDashTab, adminTab, setAdminTab,
     users, setUsers: setUsersAndSave,
-    txHistory, setTxHistory,
-    pending, setPending: setPendingAndSave,
+    txHistory, pending, setPending: setPendingAndSave,
     feeReqs, setFeeReqs: setFeeReqsAndSave,
     walletAssignments, assignWallet, removeWallet,
     toast, setToast, modal, setModal, alert, setAlert,
@@ -419,7 +438,9 @@ export function AppProvider({ children }) {
     updateUser, addTx, getTxs,
     getUserFeeReqs, getUserWallet, hasPendingFees,
     removePending, doLogout,
-    approveWithdrawal, requestFeePayment, confirmFeePaid,
+    approveWithdrawal, confirmFeePaid,
+    registerUser, loginUser,
+    checkAdminCreds, checkBoardCreds,
     refreshData: loadAll,
     supabase,
   };

@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useApp, usePrices, COINS, BASE_PRICES, fmt, fmtCrypto, createHoldings, createStaking } from "./AppContext";
 import { C, S, btn } from "./theme";
 import { CoinIcon, Tag, EmptyState } from "./components";
@@ -807,44 +807,62 @@ export function AdminSettings() {
 
 // ─── AGENT DEPOSIT BOARD ──────────────────────────────────────────────────────
 export function AgentDepositBoard() {
+  const { supabase, checkBoardCreds } = useApp();
   const [authed,   setAuthed]   = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [err,      setErr]      = useState("");
-  const [deposits, setDeposits] = useState(() => {
-    try { return JSON.parse(localStorage.getItem("vx_agent_deposits") || "[]"); } catch(e) { return []; }
-  });
+  const [deposits, setDeposits] = useState([]);
+  const [loading2, setLoading2] = useState(false);
   const [form, setForm] = useState({ amount:"", date:new Date().toISOString().split("T")[0], method:"Crypto", agent:"", client:"" });
   const [toast, setToast] = useState("");
 
-  const save = (deps) => {
-    localStorage.setItem("vx_agent_deposits", JSON.stringify(deps));
-    setDeposits(deps);
-  };
+  // Load from Supabase when authed
+  useEffect(() => {
+    if (!authed || !supabase) return;
+    setLoading2(true);
+    supabase.from("vx_agent_deposits").select("*").order("id", { ascending:false })
+      .then(({ data }) => { if (data) setDeposits(data); setLoading2(false); })
+      .catch(() => setLoading2(false));
+
+    // Realtime sync
+    const ch = supabase.channel("vx_deposits_board")
+      .on("postgres_changes", { event:"*", schema:"public", table:"vx_agent_deposits" }, () => {
+        supabase.from("vx_agent_deposits").select("*").order("id", { ascending:false })
+          .then(({ data }) => { if (data) setDeposits(data); });
+      }).subscribe();
+    return () => supabase.removeChannel(ch);
+  }, [authed, supabase]);
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(""), 3000); };
 
   const doLogin = () => {
-    if (username === "Admin1" && password === "Admin001") { setAuthed(true); setErr(""); }
+    if (checkBoardCreds(username, password)) { setAuthed(true); setErr(""); }
     else setErr("Invalid credentials");
   };
 
-  const addDeposit = () => {
+  const addDeposit = async () => {
     const amt = parseFloat(form.amount);
-    if (!amt || amt <= 0) { showToast("⚠️ Enter a valid amount"); return; }
-    if (!form.date)       { showToast("⚠️ Select a date"); return; }
-    if (!form.agent.trim()){ showToast("⚠️ Enter agent name"); return; }
-    if (!form.client.trim()){ showToast("⚠️ Enter client name"); return; }
-    const next = [{ id:Date.now(), amount:amt, date:form.date, method:form.method, agent:form.agent.trim(), client:form.client.trim() }, ...deposits];
-    save(next);
-    setForm(f => ({ ...f, amount:"", agent:"", client:"" }));
-    showToast("✅ Deposit logged — $" + fmt(amt));
-    fireworks();
+    if (!amt || amt <= 0)    { showToast("⚠️ Enter a valid amount"); return; }
+    if (!form.date)          { showToast("⚠️ Select a date"); return; }
+    if (!form.agent.trim())  { showToast("⚠️ Enter agent name"); return; }
+    if (!form.client.trim()) { showToast("⚠️ Enter client name"); return; }
+    const rec = { id:Date.now(), amount:amt, date:form.date, method:form.method, agent:form.agent.trim(), client:form.client.trim() };
+    try {
+      await supabase.from("vx_agent_deposits").insert(rec);
+      setDeposits(prev => [rec, ...prev]);
+      setForm(f => ({ ...f, amount:"", agent:"", client:"" }));
+      showToast("✅ Deposit logged — $" + fmt(amt));
+      fireworks();
+    } catch(e) { showToast("❌ Failed to save. Check connection."); }
   };
 
-  const removeDeposit = (id) => {
+  const removeDeposit = async (id) => {
     if (!window.confirm("Remove this deposit?")) return;
-    save(deposits.filter(d => d.id !== id));
+    try {
+      await supabase.from("vx_agent_deposits").delete().eq("id", id);
+      setDeposits(prev => prev.filter(d => d.id !== id));
+    } catch(e) { showToast("❌ Failed to delete."); }
   };
 
   const fireworks = () => {
@@ -972,7 +990,9 @@ export function AgentDepositBoard() {
             <tr>{["Amount","Date","Method","Agent","Client","Running Total",""].map(h=><th key={h} style={S.th}>{h}</th>)}</tr>
           </thead>
           <tbody>
-            {deposits.length === 0 ? (
+            {loading2 ? (
+              <tr><td colSpan={7} style={{ ...S.td, textAlign:"center", padding:"40px", color:C.text3 }}>Loading deposits from cloud…</td></tr>
+            ) : deposits.length === 0 ? (
               <tr><td colSpan={6} style={{ ...S.td, textAlign:"center", padding:"48px", color:C.text3 }}>
                 <div style={{ fontSize:36, marginBottom:12, opacity:.3 }}>🏦</div>
                 <div>No deposits logged yet. Add your first entry above.</div>

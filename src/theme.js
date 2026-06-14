@@ -72,4 +72,16 @@ export const globalCSS = `
   tr:hover td { background: rgba(255,200,0,.03) !important; transition: background .1s; }
   .vx-glow { animation: vxGlow 3s ease-in-out infinite alternate; }
   @keyframes vxGlow { from { box-shadow: 0 0 20px rgba(255,200,0,.3); } to { box-shadow: 0 0 40px rgba(255,200,0,.6); } }
+  @media (max-width: 768px) {
+    .grid-4 { grid-template-columns: 1fr 1fr !important; }
+    .grid-3 { grid-template-columns: 1fr 1fr !important; }
+    .grid-2 { grid-template-columns: 1fr !important; }
+    .hide-mobile { display: none !important; }
+    .nav-ticker { display: none !important; }
+    .table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  }
+  @media (max-width: 480px) {
+    .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr !important; }
+    .auth-box-inner { padding: 20px !important; }
+  }
 `;
