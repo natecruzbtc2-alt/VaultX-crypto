@@ -29,9 +29,9 @@ export const S = {
   tbl:  { width:"100%", borderCollapse:"collapse" },
   th:   { padding:"10px 16px", textAlign:"left", fontSize:11, color:C.text3, textTransform:"uppercase", letterSpacing:".06em", fontWeight:500, borderBottom:`1px solid ${C.border2}`, background:`rgba(255,200,0,.03)`, whiteSpace:"nowrap" },
   td:   { padding:"13px 16px", fontSize:13, borderBottom:`1px solid ${C.border2}`, color:C.text2, verticalAlign:"middle" },
-  authBox: { background:`linear-gradient(160deg,#141414,#0a0a0a)`, border:`1px solid ${C.border}`, borderRadius:20, padding:36, width:440, maxWidth:"95vw", boxShadow:`0 20px 80px rgba(0,0,0,.7), 0 0 60px rgba(255,200,0,.08)` },
+  authBox: { background:`linear-gradient(160deg,#141414,#0a0a0a)`, border:`1px solid ${C.border}`, borderRadius:20, padding:"clamp(20px, 5vw, 36px)", width:"min(440px, 94vw)", boxShadow:`0 20px 80px rgba(0,0,0,.7), 0 0 60px rgba(255,200,0,.08)` },
   modal:   { position:"fixed", inset:0, background:"rgba(0,0,0,.85)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:200, backdropFilter:"blur(8px)" },
-  modalBox:{ background:`linear-gradient(160deg,#161616,#0d0d0d)`, border:`1px solid ${C.border}`, borderRadius:20, padding:30, width:460, maxWidth:"95vw", boxShadow:`0 20px 80px rgba(0,0,0,.7)` },
+  modalBox:{ background:`linear-gradient(160deg,#161616,#0d0d0d)`, border:`1px solid ${C.border}`, borderRadius:20, padding:"clamp(18px, 4vw, 30px)", width:"min(460px, 96vw)", boxShadow:`0 20px 80px rgba(0,0,0,.7)` },
   g2: { display:"grid", gridTemplateColumns:"1fr 1fr", gap:16 },
   g3: { display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:14 },
   g4: { display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14 },
@@ -84,4 +84,87 @@ export const globalCSS = `
     .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr !important; }
     .auth-box-inner { padding: 20px !important; }
   }
+
+  /* ═══════════════════════════════════════════
+     MOBILE & TABLET RESPONSIVE
+  ═══════════════════════════════════════════ */
+
+  /* Tablet: 768px and below */
+  @media (max-width: 768px) {
+
+    /* Hide sidebar on mobile, show bottom nav */
+    .vx-sidebar { display: none !important; }
+
+    /* Stack dashboard layout vertically */
+    .vx-dash-body { flex-direction: column !important; }
+    .vx-dash-main { padding: 16px !important; }
+
+    /* Nav */
+    .vx-ticker { display: none !important; }
+    .vx-nav-mid { display: none !important; }
+
+    /* Grids collapse to 2 columns */
+    .vx-g4 { grid-template-columns: 1fr 1fr !important; }
+    .vx-g3 { grid-template-columns: 1fr 1fr !important; }
+    .vx-g2 { grid-template-columns: 1fr !important; }
+
+    /* Auth box */
+    .vx-auth-box { width: 95vw !important; padding: 24px 18px !important; }
+
+    /* Tables scroll horizontally */
+    .vx-table-wrap { overflow-x: auto !important; -webkit-overflow-scrolling: touch !important; }
+
+    /* Hero font */
+    .vx-hero-h1 { font-size: 36px !important; letter-spacing: -1px !important; }
+    .vx-hero-sub { font-size: 15px !important; }
+
+    /* Buttons full width on mobile */
+    .vx-btn-row { flex-direction: column !important; width: 100% !important; }
+    .vx-btn-row button { width: 100% !important; }
+
+    /* Cards */
+    .vx-card { padding: 14px !important; }
+
+    /* Forms */
+    .vx-form-grid { grid-template-columns: 1fr !important; }
+
+    /* Stats row */
+    .vx-stats-row { grid-template-columns: 1fr 1fr !important; }
+  }
+
+  /* Phone: 480px and below */
+  @media (max-width: 480px) {
+    .vx-g4, .vx-g3, .vx-g2 { grid-template-columns: 1fr !important; }
+    .vx-stats-row { grid-template-columns: 1fr 1fr !important; }
+    .vx-hero-h1 { font-size: 28px !important; }
+    .vx-nav { padding: 0 14px !important; }
+    .vx-nav .vx-logo-text { font-size: 14px !important; }
+    .vx-modal-box { width: 96vw !important; padding: 20px 14px !important; }
+  }
+
+  /* Bottom mobile nav (shows on mobile instead of sidebar) */
+  .vx-mobile-nav {
+    display: none;
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(10,10,10,.97);
+    border-top: 1px solid rgba(255,200,0,.15);
+    padding: 8px 4px;
+    z-index: 50;
+    justify-content: space-around;
+    align-items: center;
+  }
+  @media (max-width: 768px) {
+    .vx-mobile-nav { display: flex !important; }
+    .vx-dash-main { padding-bottom: 70px !important; }
+  }
+  .vx-mobile-nav-btn {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 3px; padding: 6px 10px; border-radius: 8px;
+    border: none; background: none; color: #707070;
+    font-size: 10px; font-family: inherit; cursor: pointer;
+    font-weight: 500; min-width: 48px; transition: color .15s;
+  }
+  .vx-mobile-nav-btn.active { color: #ffc800; }
+  .vx-mobile-nav-btn .icon { font-size: 20px; line-height: 1; }
 `;

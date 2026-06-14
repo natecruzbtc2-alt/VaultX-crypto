@@ -43,20 +43,20 @@ export function LandingPage() {
       <style>{globalCSS}</style>
       <NavBar />
       <TickerBar />
-      <div style={{ maxWidth: 1140, margin: "0 auto", padding: "56px 24px 0" }}>
+      <div style={{ maxWidth: 1140, margin: "0 auto", padding: "clamp(24px, 5vw, 56px) 16px 0" }}>
         {/* Hero */}
         <div style={{ textAlign: "center", marginBottom: 64 }}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(138,43,226,.1)", border: `1px solid ${C.border}`, borderRadius: 20, padding: "5px 18px", fontSize: 12, color: C.purple3, marginBottom: 24 }}>
             <span style={S.ldot} /> Live market data · Real-time trading · UK Regulated
           </div>
-          <h1 style={{ fontSize: 58, fontWeight: 800, letterSpacing: "-2.5px", lineHeight: 1.08, color: C.text, marginBottom: 20 }}>
+          <h1 style={{ fontSize: "clamp(28px, 5vw, 58px)", fontWeight: 800, letterSpacing: "-1.5px", lineHeight: 1.08, color: C.text, marginBottom: 20 }}>
             The exclusive way<br />to trade{" "}
             <span style={{ background: `linear-gradient(135deg,${C.purple},${C.purple3})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>crypto.</span>
           </h1>
-          <p style={{ color: C.text3, fontSize: 17, maxWidth: 520, margin: "0 auto 32px", lineHeight: 1.7 }}>
+          <p style={{ color: C.text3, fontSize: "clamp(14px, 2.5vw, 17px)", maxWidth: 520, margin: "0 auto 32px", lineHeight: 1.7 }}>
             Real-time prices, portfolio analytics, staking rewards and instant transfers — all in one elite vault platform. Trusted by 50,000+ traders worldwide.
           </p>
-          <div style={{ display: "flex", justifyContent: "center", gap: 14, flexWrap: "wrap" }}>
+          <div style={{ display: "flex", justifyContent: "center", gap: 14, flexWrap: "wrap", width:"100%" }}>
             <button style={{ ...btn(), padding: "14px 36px", fontSize: 15 }} onClick={() => setView("register")}>Start Trading Free</button>
             <button style={{ ...btn("ghost"), padding: "14px 36px", fontSize: 15 }} onClick={() => setView("login")}>Sign In</button>
           </div>
@@ -66,7 +66,7 @@ export function LandingPage() {
         </div>
 
         {/* Stats */}
-        <div style={{ ...S.card, display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 0, marginBottom: 40, padding: 0, overflow: "hidden" }}>
+        <div style={{ ...S.card, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 0, marginBottom: 40, padding: 0, overflow: "hidden" }}>
           {[["$2.4T", "Total Market Cap"], ["$94B", "24h Volume"], ["50,000+", "Active Traders"], ["0.10%", "Trading Fee"]].map(([v, l], i) => (
             <div key={i} style={{ padding: "22px 28px", borderRight: i < 3 ? `1px solid ${C.border2}` : "none" }}>
               <div style={{ fontSize: 26, fontWeight: 700, color: C.purple3 }}>{v}</div>
@@ -76,7 +76,7 @@ export function LandingPage() {
         </div>
 
         {/* Coin cards */}
-        <div style={{ ...S.g4, marginBottom: 40 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(220px, 1fr))", gap:14, marginBottom: 40 }}>
           {COINS.slice(0, 4).map(coin => {
             const p = prices[coin.sym], up = p.change >= 0;
             return (
@@ -137,7 +137,7 @@ export function LandingPage() {
         </div>
 
         {/* Features */}
-        <div style={{ ...S.g3, marginBottom: 0 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(220px, 1fr))", gap:14, marginBottom: 0 }}>
           {[
             { icon: "🔐", t: "Bank-Grade Security", d: "Multi-sig wallets, cold storage, 2FA and insurance backed vaults protect your assets." },
             { icon: "⚡", t: "Instant Settlements", d: "Sub-second trades with deep liquidity across 200+ trading pairs worldwide." },

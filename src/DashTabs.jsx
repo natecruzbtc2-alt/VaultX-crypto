@@ -109,7 +109,7 @@ export function DashOverview() {
       </div>
 
       {/* Balance cards */}
-      <div style={{ ...S.g4, marginBottom:22 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(160px, 1fr))", gap:14, marginBottom:22 }}>
         {[
           { label:"Total Balance",    val:"$"+fmt(totalVal),           sub:"All assets combined",    c:C.purple3 },
           { label:"Available Cash",   val:"$"+fmt(user?.balance||0),   sub:"Ready to trade or withdraw", c:C.green },
@@ -237,7 +237,7 @@ export function DashOverview() {
         {txs.length === 0 ? (
           <EmptyState icon="📋" text="No transactions yet. Start trading to see your activity here." />
         ) : (
-          <div style={{ overflowX:"auto" }}>
+          <div style={{ overflowX:"auto", WebkitOverflowScrolling:"touch" }}>
             <table style={S.tbl}>
               <thead><tr>{["Type","Asset","Amount","Value","Fee","Status","Date"].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
               <tbody>
@@ -275,7 +275,7 @@ export function DashMarkets() {
       <div style={S.hd}>Live Markets</div>
       <div style={S.sub}><span style={S.ldot}/>Prices updating every 2.5 seconds</div>
 
-      <div style={{ ...S.g4, marginBottom:22 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(160px, 1fr))", gap:14, marginBottom:22 }}>
         {COINS.slice(0,4).map(coin => {
           const p = prices[coin.sym], up = p.change >= 0;
           return (
@@ -302,7 +302,7 @@ export function DashMarkets() {
           <span style={{ fontSize:16, fontWeight:700, color:C.text }}>All Markets</span>
           <input style={{ ...S.inp, width:200, padding:"7px 12px", fontSize:13 }} placeholder="Search coin…" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
-        <div style={{ overflowX:"auto" }}>
+        <div style={{ overflowX:"auto", WebkitOverflowScrolling:"touch" }}>
           <table style={S.tbl}>
             <thead><tr>{["#","Asset","Price","24h Change","24h High","24h Low","Volume","Action"].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
             <tbody>
@@ -579,7 +579,7 @@ export function DashPortfolio() {
       <div style={S.sub}>Crypto allocation, performance and P&L tracking</div>
 
       {/* Summary */}
-      <div style={{ ...S.g3, marginBottom:22 }}>
+      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(180px, 1fr))", gap:14, marginBottom:22 }}>
         {[
           { label:"Total Invested",  val:"$"+fmt(totalCost),  c:C.text2 },
           { label:"Current Value",   val:"$"+fmt(totalVal),   c:C.purple3 },
@@ -720,7 +720,7 @@ export function DashStaking() {
 
       {/* Summary */}
       {staking.length > 0 && (
-        <div style={{ ...S.g3, marginBottom:22 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(180px, 1fr))", gap:14, marginBottom:22 }}>
           {[
             { label:"Total Staked Value", val:"$"+fmt(totalStakedVal), c:C.purple3 },
             { label:"Est. Monthly Yield", val:"$"+fmt(totalMonthly,2), c:C.green },
@@ -828,7 +828,7 @@ export function DashHistory() {
         {filtered.length === 0 ? (
           <EmptyState icon="📋" text={`No ${filter === "All" ? "" : filter + " "}transactions yet.`} />
         ) : (
-          <div style={{ overflowX:"auto" }}>
+          <div style={{ overflowX:"auto", WebkitOverflowScrolling:"touch" }}>
             <table style={S.tbl}>
               <thead><tr>{["TX ID","Type","Asset","Amount","Value","Fee","Status","Date","Notes"].map(h=><th key={h} style={S.th}>{h}</th>)}</tr></thead>
               <tbody>
