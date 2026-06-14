@@ -45,8 +45,8 @@ export default function CryptoBackground() {
         drawn: Math.floor(Math.random() * 20),
         speed: 0.08 + Math.random() * 0.12,
         color: COLORS[idx % COLORS.length],
-        opacity: 0.25 + Math.random() * 0.2,
-        lineW: 1.2 + Math.random() * 1.0,
+        opacity: 0.45 + Math.random() * 0.3,
+        lineW: 1.8 + Math.random() * 1.5,
       };
     }
 
@@ -55,10 +55,10 @@ export default function CryptoBackground() {
     const dots = Array.from({ length: 35 }, () => ({
       x: Math.random() * W,
       y: Math.random() * H,
-      r: 1.0 + Math.random() * 2.0,
+      r: 1.5 + Math.random() * 2.5,
       vx: (Math.random() - 0.5) * 0.25,
       vy: (Math.random() - 0.5) * 0.25,
-      op: 0.3 + Math.random() * 0.4,
+      op: 0.5 + Math.random() * 0.4,
       phase: Math.random() * Math.PI * 2,
     }));
 
@@ -69,15 +69,15 @@ export default function CryptoBackground() {
 
       // Top glow
       const grd = ctx.createRadialGradient(W/2, 0, 0, W/2, H*0.5, W*0.65);
-      grd.addColorStop(0,   "rgba(255,200,0,.18)");
-      grd.addColorStop(0.4, "rgba(255,200,0,.08)");
+      grd.addColorStop(0,   "rgba(255,200,0,.35)");
+      grd.addColorStop(0.4, "rgba(255,200,0,.12)");
       grd.addColorStop(1,   "rgba(0,0,0,0)");
       ctx.fillStyle = grd;
       ctx.fillRect(0, 0, W, H);
 
       // Grid
       ctx.save();
-      ctx.strokeStyle = "rgba(255,200,0,.15)";
+      ctx.strokeStyle = "rgba(255,200,0,.28)";
       ctx.lineWidth = 0.5;
       for (let c = 0; c <= COLS; c++) {
         const x = (W / COLS) * c;
@@ -94,11 +94,11 @@ export default function CryptoBackground() {
       ctx.save();
       const sg = ctx.createLinearGradient(scanX - 80, 0, scanX + 2, 0);
       sg.addColorStop(0, "rgba(255,200,0,0)");
-      sg.addColorStop(1, "rgba(255,200,0,.14)");
+      sg.addColorStop(1, "rgba(255,200,0,.25)");
       ctx.fillStyle = sg;
       ctx.fillRect(scanX - 80, 0, 82, H);
       ctx.setLineDash([4, 8]);
-      ctx.strokeStyle = "rgba(255,200,0,.20)";
+      ctx.strokeStyle = "rgba(255,200,0,.35)";
       ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(scanX, 0); ctx.lineTo(scanX, H); ctx.stroke();
       ctx.setLineDash([]);
@@ -168,7 +168,7 @@ export default function CryptoBackground() {
 
       // Corner brackets
       ctx.save();
-      ctx.strokeStyle = "rgba(255,200,0,.55)";
+      ctx.strokeStyle = "rgba(255,200,0,.85)";
       ctx.lineWidth = 1.5;
       [[20,20,1,1],[W-20,20,-1,1],[20,H-20,1,-1],[W-20,H-20,-1,-1]].forEach(([x,y,sx,sy]) => {
         ctx.beginPath();

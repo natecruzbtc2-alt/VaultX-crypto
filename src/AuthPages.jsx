@@ -37,7 +37,7 @@ export function LandingPage() {
   };
 
   return (
-    <div style={{ ...S.app, position:"relative" }}>
+    <div style={{ ...S.app, position:"relative", background:"transparent" }}>
       <CryptoBackground />
       <div style={{ position:"relative", zIndex:2 }}>
       <style>{globalCSS}</style>
@@ -190,7 +190,7 @@ export function LoginPage() {
   }, [adminUser, adminPw, showAlert, showToast, setView]);
 
   return (
-    <div style={{ ...S.app, position:"relative" }}>
+    <div style={{ ...S.app, position:"relative", background:"transparent" }}>
       <CryptoBackground />
       <div style={{ position:"relative", zIndex:2 }}>
       <style>{globalCSS}</style>
@@ -286,7 +286,7 @@ export function RegisterPage() {
   }, [name, email, password, confirm, agreed, users, registerUser, showAlert, showToast, setView]);
 
   return (
-    <div style={{ ...S.app, position:"relative" }}>
+    <div style={{ ...S.app, position:"relative", background:"transparent" }}>
       <CryptoBackground />
       <div style={{ position:"relative", zIndex:2 }}>
       <style>{globalCSS}</style>
