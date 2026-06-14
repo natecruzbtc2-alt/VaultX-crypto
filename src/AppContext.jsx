@@ -399,9 +399,9 @@ export function AppProvider({ children }) {
 
   if (loading) {
     return (
-      <div style={{ background:"#141d33", minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16 }}>
-        <div style={{ width:44, height:44, borderRadius:"50%", border:"3px solid rgba(224,184,115,.2)", borderTopColor:"#e0b873", animation:"spin 0.8s linear infinite" }}/>
-        <div style={{ color:"#b8bed0", fontSize:14, fontFamily:"'DM Sans',sans-serif" }}>Connecting to VaultX cloud…</div>
+      <div style={{ background:"#0a0a0a", minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16 }}>
+        <div style={{ width:48, height:48, borderRadius:"50%", border:"3px solid rgba(255,200,0,.2)", borderTopColor:"#ffc800", animation:"spin 0.8s linear infinite" }}/>
+        <div style={{ color:"#707070", fontSize:14, fontFamily:"'DM Sans',sans-serif", letterSpacing:".05em" }}>Connecting to VaultX…</div>
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       </div>
     );

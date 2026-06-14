@@ -3,6 +3,7 @@ import { useState, useCallback } from "react";
 import { useApp, ADMIN_CREDS, createHoldings, createStaking, usePrices, COINS, fmt } from "./AppContext";
 import { C, S, btn, globalCSS } from "./theme";
 import { TickerBar, Spark } from "./components";
+import CryptoBackground from "./CryptoBackground";
 
 
 function NavBar() {
@@ -36,7 +37,9 @@ export function LandingPage() {
   };
 
   return (
-    <div style={S.app}>
+    <div style={{ ...S.app, position:"relative" }}>
+      <CryptoBackground />
+      <div style={{ position:"relative", zIndex:1 }}>
       <style>{globalCSS}</style>
       <NavBar />
       <TickerBar />
@@ -162,6 +165,7 @@ export function LandingPage() {
         s1.async=true;s1.src='https://embed.tawk.to/682cba5f50abe41913d56ca1/1irm5mf05';
         s1.charset='UTF-8';s1.setAttribute('crossorigin','*');s0.parentNode.insertBefore(s1,s0);})();
       `}} />
+      </div>
     </div>
   );
 }
@@ -192,7 +196,9 @@ export function LoginPage() {
   }, [adminUser, adminPw, showAlert, showToast, setView]);
 
   return (
-    <div style={S.app}>
+    <div style={{ ...S.app, position:"relative" }}>
+      <CryptoBackground />
+      <div style={{ position:"relative", zIndex:1 }}>
       <style>{globalCSS}</style>
       <nav style={S.nav}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} onClick={() => setView("landing")}>
@@ -245,6 +251,7 @@ export function LoginPage() {
           )}
         </div>
       </div>
+      </div>
     </div>
   );
 }
@@ -278,7 +285,9 @@ export function RegisterPage() {
   }, [name, email, password, confirm, agreed, users, setUsers, showAlert, showToast, setView]);
 
   return (
-    <div style={S.app}>
+    <div style={{ ...S.app, position:"relative" }}>
+      <CryptoBackground />
+      <div style={{ position:"relative", zIndex:1 }}>
       <style>{globalCSS}</style>
       <nav style={S.nav}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} onClick={() => setView("landing")}>
@@ -323,6 +332,7 @@ export function RegisterPage() {
             Already have an account?{" "}<span style={{ color: C.purple3, cursor: "pointer", fontWeight: 600 }} onClick={() => setView("login")}>Sign in</span>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
