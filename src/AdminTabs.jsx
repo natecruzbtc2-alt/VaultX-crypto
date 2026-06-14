@@ -804,3 +804,204 @@ export function AdminSettings() {
     </div>
   );
 }
+
+// ─── AGENT DEPOSIT BOARD ──────────────────────────────────────────────────────
+export function AgentDepositBoard() {
+  const [authed,   setAuthed]   = useState(false);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [err,      setErr]      = useState("");
+  const [deposits, setDeposits] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("vx_agent_deposits") || "[]"); } catch(e) { return []; }
+  });
+  const [form, setForm] = useState({ amount:"", date:new Date().toISOString().split("T")[0], method:"Crypto", agent:"" });
+  const [toast, setToast] = useState("");
+
+  const save = (deps) => {
+    localStorage.setItem("vx_agent_deposits", JSON.stringify(deps));
+    setDeposits(deps);
+  };
+
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(""), 3000); };
+
+  const doLogin = () => {
+    if (username === "Admin1" && password === "Admin001") { setAuthed(true); setErr(""); }
+    else setErr("Invalid credentials");
+  };
+
+  const addDeposit = () => {
+    const amt = parseFloat(form.amount);
+    if (!amt || amt <= 0) { showToast("⚠️ Enter a valid amount"); return; }
+    if (!form.date)       { showToast("⚠️ Select a date"); return; }
+    if (!form.agent.trim()){ showToast("⚠️ Enter agent name"); return; }
+    const next = [{ id:Date.now(), amount:amt, date:form.date, method:form.method, agent:form.agent.trim() }, ...deposits];
+    save(next);
+    setForm(f => ({ ...f, amount:"", agent:"" }));
+    showToast("✅ Deposit logged — $" + fmt(amt));
+    fireworks();
+  };
+
+  const removeDeposit = (id) => {
+    if (!window.confirm("Remove this deposit?")) return;
+    save(deposits.filter(d => d.id !== id));
+  };
+
+  const fireworks = () => {
+    const colors = ["#ffc800","#ffd633","#fff","#f7931a","#22c55e","#60a5fa"];
+    for (let i = 0; i < 60; i++) {
+      const el = document.createElement("div");
+      const size = 5 + Math.random() * 8;
+      el.style.cssText = `position:fixed;top:-10px;left:${Math.random()*100}vw;width:${size}px;height:${size}px;background:${colors[Math.floor(Math.random()*colors.length)]};border-radius:${Math.random()>.5?"50%":"2px"};pointer-events:none;z-index:9999;animation:vxFall ${1.2+Math.random()*1.5}s linear ${Math.random()*.5}s forwards;`;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 3000);
+    }
+  };
+
+  const fmtDate = s => {
+    if (!s) return "";
+    try { return new Date(s+"T00:00:00").toLocaleDateString("en-GB",{day:"2-digit",month:"short",year:"numeric"}); } catch(e){ return s; }
+  };
+
+  const rev = [...deposits].reverse();
+  let run = 0;
+  const runMap = {};
+  rev.forEach(d => { run += d.amount; runMap[d.id] = run; });
+
+  const total  = deposits.reduce((a,d) => a+d.amount, 0);
+  const crypto = deposits.filter(d=>d.method==="Crypto").reduce((a,d)=>a+d.amount,0);
+  const wire   = deposits.filter(d=>d.method==="Wire").reduce((a,d)=>a+d.amount,0);
+
+  const styles = `@keyframes vxFall{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(100vh) rotate(600deg);opacity:0}}`;
+
+  if (!authed) return (
+    <div>
+      <style>{styles}</style>
+      <div style={{ maxWidth:400, margin:"60px auto", background:"linear-gradient(160deg,#1a1300,#0d0d0d)", border:"1.5px solid rgba(255,200,0,.3)", borderRadius:20, padding:36, boxShadow:"0 0 60px rgba(255,200,0,.1)" }}>
+        <div style={{ textAlign:"center", marginBottom:28 }}>
+          <div style={{ width:52, height:52, background:"#ffc800", borderRadius:14, display:"flex", alignItems:"center", justifyContent:"center", fontSize:22, fontWeight:900, color:"#000", margin:"0 auto 14px", boxShadow:"0 0 28px rgba(255,200,0,.5)" }}>V</div>
+          <div style={{ fontSize:18, fontWeight:800, color:C.text }}>Agent Deposit Board</div>
+          <div style={{ fontSize:12, color:C.text3, marginTop:4 }}>Restricted access — agents only</div>
+        </div>
+        {err && <div style={{ background:"rgba(239,68,68,.1)", border:"1px solid rgba(239,68,68,.3)", borderRadius:10, padding:"10px 14px", fontSize:13, color:C.red, marginBottom:16, textAlign:"center" }}>{err}</div>}
+        <div style={{ marginBottom:14 }}>
+          <label style={S.label}>Username</label>
+          <input style={S.inp} placeholder="Admin1" value={username} onChange={e=>setUsername(e.target.value)} onKeyDown={e=>e.key==="Enter"&&doLogin()} autoFocus />
+        </div>
+        <div style={{ marginBottom:24 }}>
+          <label style={S.label}>Password</label>
+          <input style={S.inp} type="password" placeholder="••••••••" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>e.key==="Enter"&&doLogin()} />
+        </div>
+        <button style={{ ...btn("primary"), width:"100%", padding:"13px", fontSize:15 }} onClick={doLogin}>
+          Enter Board →
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div>
+      <style>{styles}</style>
+
+      {/* Toast */}
+      {toast && <div style={{ position:"fixed", bottom:24, right:24, background:toast.startsWith("✅")?"#ffc800":"#ef4444", color:toast.startsWith("✅")?"#000":"#fff", padding:"12px 22px", borderRadius:12, fontSize:13, fontWeight:700, zIndex:9999, boxShadow:"0 8px 30px rgba(0,0,0,.4)" }}>{toast}</div>}
+
+      {/* Header */}
+      <div style={{ ...S.rowsb, marginBottom:22 }}>
+        <div>
+          <div style={{ ...S.hd, color:"#ffc800" }}>Agent Deposit Board</div>
+          <div style={S.sub}>Log and track all agent deposits</div>
+        </div>
+        <button style={{ ...btn("ghost"), padding:"7px 16px", fontSize:12 }} onClick={() => setAuthed(false)}>🔒 Lock</button>
+      </div>
+
+      {/* Stats */}
+      <div style={{ ...S.g4, marginBottom:22 }}>
+        {[
+          { l:"Grand Total",  v:"$"+fmt(total),  c:"#ffc800", i:"💰" },
+          { l:"Entries",      v:deposits.length,  c:C.text,    i:"📋" },
+          { l:"Via Crypto",   v:"$"+fmt(crypto),  c:"#f7931a", i:"₿"  },
+          { l:"Via Wire",     v:"$"+fmt(wire),    c:"#60a5fa", i:"🏦" },
+        ].map((s,i) => (
+          <div key={i} style={{ ...S.card, position:"relative", overflow:"hidden", borderColor:"rgba(255,200,0,.2)" }}>
+            <div style={{ position:"absolute", top:12, right:16, fontSize:22, opacity:.4 }}>{s.i}</div>
+            <div style={{ fontSize:10, color:C.text3, textTransform:"uppercase", letterSpacing:".06em", marginBottom:8 }}>{s.l}</div>
+            <div style={{ fontSize:24, fontWeight:800, color:s.c }}>{s.v}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Form */}
+      <div style={{ ...S.card, marginBottom:22, borderColor:"rgba(255,200,0,.25)", background:"linear-gradient(160deg,rgba(255,200,0,.06),rgba(0,0,0,0))" }}>
+        <div style={{ fontSize:13, fontWeight:700, color:"#ffc800", textTransform:"uppercase", letterSpacing:".07em", marginBottom:18 }}>+ Log New Deposit</div>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14, marginBottom:16 }}>
+          <div>
+            <label style={S.label}>Amount (USD)</label>
+            <input style={S.inp} type="number" placeholder="e.g. 25000" value={form.amount} onChange={e=>setForm(f=>({...f,amount:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&addDeposit()} />
+          </div>
+          <div>
+            <label style={S.label}>Deposit Date</label>
+            <input style={S.inp} type="date" value={form.date} onChange={e=>setForm(f=>({...f,date:e.target.value}))} />
+          </div>
+          <div>
+            <label style={S.label}>How Deposited</label>
+            <select style={S.sel} value={form.method} onChange={e=>setForm(f=>({...f,method:e.target.value}))}>
+              <option value="Crypto">₿ Crypto</option>
+              <option value="Wire">🏦 Wire Transfer</option>
+            </select>
+          </div>
+          <div>
+            <label style={S.label}>Agent Name</label>
+            <input style={S.inp} placeholder="e.g. Jane Smith" value={form.agent} onChange={e=>setForm(f=>({...f,agent:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&addDeposit()} />
+          </div>
+        </div>
+        <div style={S.row}>
+          <button style={{ ...btn("primary"), padding:"12px 32px", fontSize:14 }} onClick={addDeposit}>+ Add Deposit</button>
+          <button style={{ ...btn("ghost"), padding:"12px 20px" }} onClick={() => setForm(f=>({...f,amount:"",agent:""}))}>Clear</button>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div style={{ ...S.card, padding:0, overflow:"hidden", borderColor:"rgba(255,200,0,.15)" }}>
+        <table style={S.tbl}>
+          <thead>
+            <tr>{["Amount","Date","Method","Agent","Running Total",""].map(h=><th key={h} style={S.th}>{h}</th>)}</tr>
+          </thead>
+          <tbody>
+            {deposits.length === 0 ? (
+              <tr><td colSpan={6} style={{ ...S.td, textAlign:"center", padding:"48px", color:C.text3 }}>
+                <div style={{ fontSize:36, marginBottom:12, opacity:.3 }}>🏦</div>
+                <div>No deposits logged yet. Add your first entry above.</div>
+              </td></tr>
+            ) : deposits.map(d => (
+              <tr key={d.id}>
+                <td style={{ ...S.td, fontSize:16, fontWeight:800, color:"#ffc800", fontFamily:"monospace" }}>${fmt(d.amount)}</td>
+                <td style={{ ...S.td, fontSize:12, color:C.text2 }}>{fmtDate(d.date)}</td>
+                <td style={S.td}>
+                  <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"4px 12px", borderRadius:20, fontSize:11, fontWeight:700,
+                    background: d.method==="Crypto"?"rgba(255,200,0,.12)":"rgba(96,165,250,.12)",
+                    color: d.method==="Crypto"?"#ffc800":"#60a5fa",
+                    border: d.method==="Crypto"?"1px solid rgba(255,200,0,.3)":"1px solid rgba(96,165,250,.3)" }}>
+                    {d.method==="Crypto"?"₿":"🏦"} {d.method}
+                  </span>
+                </td>
+                <td style={{ ...S.td, fontWeight:600, color:C.text }}>{d.agent}</td>
+                <td style={{ ...S.td, fontFamily:"monospace", color:C.text3 }}>${fmt(runMap[d.id])}</td>
+                <td style={S.td}>
+                  <button style={{ background:"none", border:"none", color:"#444", cursor:"pointer", padding:"5px 8px", borderRadius:6, fontSize:14, transition:"color .1s" }}
+                    onMouseEnter={e=>e.target.style.color="#ef4444"} onMouseLeave={e=>e.target.style.color="#444"}
+                    onClick={() => removeDeposit(d.id)}>✕</button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {deposits.length > 0 && (
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"16px 20px", background:"rgba(255,200,0,.04)", borderTop:"1px solid rgba(255,200,0,.15)" }}>
+            <span style={{ fontSize:11, fontWeight:700, color:C.text3, textTransform:"uppercase", letterSpacing:".1em" }}>Grand Total</span>
+            <span style={{ fontSize:24, fontWeight:800, color:"#ffc800", fontFamily:"monospace" }}>${fmt(total)}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

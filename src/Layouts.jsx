@@ -2,7 +2,7 @@ import { useApp } from "./AppContext";
 import { C, S, btn, globalCSS } from "./theme";
 import { TickerMini } from "./components";
 import { DashOverview, DashMarkets, DashWallet, DashPortfolio, DashStaking, DashHistory } from "./DashTabs";
-import { AdminUsers, AdminDeposits, AdminWallets, AdminWithdrawals, AdminPending, AdminFees, AdminMarkets, AdminSettings } from "./AdminTabs";
+import { AdminUsers, AdminDeposits, AdminWallets, AdminWithdrawals, AdminPending, AdminFees, AdminMarkets, AdminSettings, AgentDepositBoard } from "./AdminTabs";
 
 export function Dashboard() {
   const { user, dashTab, setDashTab, setView, doLogout, getUserFeeReqs } = useApp();
@@ -98,6 +98,7 @@ export function AdminPanel() {
     { id:"pending",     icon:"⏳", label:"Pending Tx",      badge:pendingCount },
     { id:"fees",        icon:"💰", label:"Fees",            badge:feeCount },
     { id:"markets",     icon:"📈", label:"Markets"          },
+    { id:"board",       icon:"🏆", label:"Deposit Board"    },
     { id:"settings",    icon:"⚙️", label:"Settings"         },
   ];
 
@@ -139,6 +140,7 @@ export function AdminPanel() {
           {adminTab==="pending"     && <AdminPending />}
           {adminTab==="fees"        && <AdminFees />}
           {adminTab==="markets"     && <AdminMarkets />}
+          {adminTab==="board"       && <AgentDepositBoard />}
           {adminTab==="settings"    && <AdminSettings />}
         </div>
       </div>
