@@ -1,75 +1,207 @@
+import { useEffect, useRef } from "react";
+
 export default function CryptoBackground() {
-  return (
-    <div style={{
-      position: "fixed",
-      top: 0, left: 0,
-      width: "100%", height: "100%",
-      pointerEvents: "none",
-      zIndex: -1,
-      overflow: "hidden",
-    }}>
-      {/* Top center gold glow */}
-      <div style={{
-        position: "absolute",
-        top: -200, left: "50%",
-        transform: "translateX(-50%)",
-        width: 800, height: 500,
-        background: "radial-gradient(ellipse, rgba(255,200,0,.12) 0%, rgba(255,200,0,.04) 40%, transparent 70%)",
-        pointerEvents: "none",
-      }}/>
+  const canvasRef = useRef(null);
 
-      {/* Bottom left subtle glow */}
-      <div style={{
-        position: "absolute",
-        bottom: -100, left: -100,
-        width: 500, height: 500,
-        background: "radial-gradient(ellipse, rgba(255,200,0,.05) 0%, transparent 70%)",
-      }}/>
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-      {/* Right side glow */}
-      <div style={{
-        position: "absolute",
-        top: "30%", right: -150,
-        width: 400, height: 400,
-        background: "radial-gradient(ellipse, rgba(255,200,0,.04) 0%, transparent 70%)",
-      }}/>
+    let animId;
+    let W = window.innerWidth;
+    let H = window.innerHeight;
+    canvas.width  = W;
+    canvas.height = H;
 
-      {/* Animated grid lines */}
-      <svg style={{ position:"absolute", inset:0, width:"100%", height:"100%", opacity:.06 }} xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <pattern id="grid" width="80" height="80" patternUnits="userSpaceOnUse">
-            <path d="M 80 0 L 0 0 0 80" fill="none" stroke="#ffc800" strokeWidth="0.5"/>
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#grid)"/>
-      </svg>
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-      {/* Floating orbs */}
-      {[
-        { size:300, top:"10%",  left:"5%",   delay:"0s",   dur:"8s"  },
-        { size:200, top:"60%",  left:"80%",  delay:"2s",   dur:"10s" },
-        { size:150, top:"40%",  left:"50%",  delay:"4s",   dur:"7s"  },
-        { size:250, top:"80%",  left:"20%",  delay:"1s",   dur:"12s" },
-        { size:120, top:"20%",  left:"75%",  delay:"3s",   dur:"9s"  },
-      ].map((o, i) => (
-        <div key={i} style={{
-          position: "absolute",
-          top: o.top, left: o.left,
-          width: o.size, height: o.size,
-          borderRadius: "50%",
-          background: `radial-gradient(ellipse, rgba(255,200,0,.06) 0%, transparent 70%)`,
-          animation: `vxOrb ${o.dur} ease-in-out ${o.delay} infinite alternate`,
-          transform: "translate(-50%, -50%)",
-        }}/>
-      ))}
+    const resize = () => {
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas.width  = W;
+      canvas.height = H;
+    };
+    window.addEventListener("resize", resize);
 
-      <style>{`
-        @keyframes vxOrb {
-          0%   { transform: translate(-50%,-50%) scale(1);   opacity: .5; }
-          50%  { transform: translate(-50%,-60%) scale(1.15); opacity: 1; }
-          100% { transform: translate(-50%,-50%) scale(.9);  opacity: .4; }
+    const COLS = 14, ROWS = 9;
+    const COLORS = ["#ffc800", "#22c55e", "#ef4444", "#ffc800", "#60a5fa"];
+
+    function parseHex(hex) {
+      const h = hex.replace("#", "");
+      return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+    }
+
+    function makeChart(idx) {
+      const totalPts = 60;
+      const pts = [];
+      let y = H * (0.25 + Math.random() * 0.5);
+      for (let i = 0; i < totalPts; i++) {
+        y = Math.max(H * 0.1, Math.min(H * 0.9, y + (Math.random() - 0.48) * 25));
+        pts.push(y);
+      }
+      return {
+        pts,
+        drawn: Math.floor(Math.random() * 20),
+        speed: 0.08 + Math.random() * 0.12,
+        color: COLORS[idx % COLORS.length],
+        opacity: 0.25 + Math.random() * 0.2,
+        lineW: 1.2 + Math.random() * 1.0,
+      };
+    }
+
+    const charts = [0,1,2,3,4].map(makeChart);
+
+    const dots = Array.from({ length: 35 }, () => ({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: 1.0 + Math.random() * 2.0,
+      vx: (Math.random() - 0.5) * 0.25,
+      vy: (Math.random() - 0.5) * 0.25,
+      op: 0.3 + Math.random() * 0.4,
+      phase: Math.random() * Math.PI * 2,
+    }));
+
+    let scanX = 0;
+
+    function draw() {
+      ctx.clearRect(0, 0, W, H);
+
+      // Top glow
+      const grd = ctx.createRadialGradient(W/2, 0, 0, W/2, H*0.5, W*0.65);
+      grd.addColorStop(0,   "rgba(255,200,0,.18)");
+      grd.addColorStop(0.4, "rgba(255,200,0,.08)");
+      grd.addColorStop(1,   "rgba(0,0,0,0)");
+      ctx.fillStyle = grd;
+      ctx.fillRect(0, 0, W, H);
+
+      // Grid
+      ctx.save();
+      ctx.strokeStyle = "rgba(255,200,0,.15)";
+      ctx.lineWidth = 0.5;
+      for (let c = 0; c <= COLS; c++) {
+        const x = (W / COLS) * c;
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+      }
+      for (let r = 0; r <= ROWS; r++) {
+        const y = (H / ROWS) * r;
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+      }
+      ctx.restore();
+
+      // Scan line
+      scanX = (scanX + 0.5) % W;
+      ctx.save();
+      const sg = ctx.createLinearGradient(scanX - 80, 0, scanX + 2, 0);
+      sg.addColorStop(0, "rgba(255,200,0,0)");
+      sg.addColorStop(1, "rgba(255,200,0,.14)");
+      ctx.fillStyle = sg;
+      ctx.fillRect(scanX - 80, 0, 82, H);
+      ctx.setLineDash([4, 8]);
+      ctx.strokeStyle = "rgba(255,200,0,.20)";
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(scanX, 0); ctx.lineTo(scanX, H); ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+
+      // Chart lines
+      charts.forEach((ch, ci) => {
+        ch.drawn += ch.speed;
+        if (ch.drawn >= ch.pts.length - 1) {
+          charts[ci] = makeChart(ci);
+          return;
         }
-      `}</style>
-    </div>
+        const count = Math.floor(ch.drawn);
+        if (count < 2) return;
+        const stepX = W / (ch.pts.length - 1);
+        const [cr, cg, cb] = parseHex(ch.color);
+        ctx.save();
+        ctx.globalAlpha = ch.opacity;
+
+        // Area
+        ctx.beginPath();
+        ctx.moveTo(0, H);
+        for (let i = 0; i <= count; i++) ctx.lineTo(i * stepX, ch.pts[i]);
+        ctx.lineTo(count * stepX, H);
+        ctx.closePath();
+        const ag = ctx.createLinearGradient(0, 0, 0, H);
+        ag.addColorStop(0, "rgba("+cr+","+cg+","+cb+",0.45)");
+        ag.addColorStop(1, "rgba("+cr+","+cg+","+cb+",0)");
+        ctx.fillStyle = ag;
+        ctx.fill();
+
+        // Line
+        ctx.beginPath();
+        for (let i = 0; i <= count; i++) {
+          const x = i * stepX, y = ch.pts[i];
+          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = "rgba("+cr+","+cg+","+cb+",1.0)";
+        ctx.lineWidth = ch.lineW;
+        ctx.lineJoin = "round";
+        ctx.stroke();
+
+        // Head dot
+        const hx = count * stepX, hy = ch.pts[count];
+        ctx.globalAlpha = Math.min(1, ch.opacity * 6);
+        ctx.beginPath();
+        ctx.arc(hx, hy, 4, 0, Math.PI * 2);
+        ctx.fillStyle = "rgba("+cr+","+cg+","+cb+",1)";
+        ctx.fill();
+        ctx.restore();
+      });
+
+      // Dots
+      dots.forEach(d => {
+        d.x = (d.x + d.vx + W) % W;
+        d.y = (d.y + d.vy + H) % H;
+        d.phase += 0.025;
+        const op = d.op * (0.5 + 0.5 * Math.sin(d.phase));
+        ctx.save();
+        ctx.globalAlpha = op;
+        ctx.fillStyle = "#ffc800";
+        ctx.beginPath();
+        ctx.arc(d.x, d.y, d.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      });
+
+      // Corner brackets
+      ctx.save();
+      ctx.strokeStyle = "rgba(255,200,0,.55)";
+      ctx.lineWidth = 1.5;
+      [[20,20,1,1],[W-20,20,-1,1],[20,H-20,1,-1],[W-20,H-20,-1,-1]].forEach(([x,y,sx,sy]) => {
+        ctx.beginPath();
+        ctx.moveTo(x, y + sy*18);
+        ctx.lineTo(x, y);
+        ctx.lineTo(x + sx*18, y);
+        ctx.stroke();
+      });
+      ctx.restore();
+
+      animId = requestAnimationFrame(draw);
+    }
+
+    draw();
+
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener("resize", resize);
+    };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      style={{
+        position: "fixed",
+        top: 0, left: 0,
+        width: "100%",
+        height: "100%",
+        pointerEvents: "none",
+        zIndex: -1,
+        display: "block",
+      }}
+    />
   );
 }
