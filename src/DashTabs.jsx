@@ -76,8 +76,8 @@ export function DashOverview() {
                 </div>
               </div>
               <button style={{ ...btn("primary"), padding:"9px 18px", fontSize:13 }}
-                onClick={() => { window.open("mailto:support@vaultx-crypto.com?subject=Fee%20Payment%20-%20"+f.id, "_blank"); }}>
-                📧 Contact Support
+                onClick={() => { if(window.Tawk_API && window.Tawk_API.maximize) { window.Tawk_API.maximize(); } else { window.open('https://tawk.to/chat/6a2e5fe88b30661d42bef351/1jr2id950', '_blank'); } }}>
+                💬 Live Chat — Contact Support
               </button>
             </div>
           ))}
@@ -499,8 +499,8 @@ export function DashWallet() {
                 Contact our support team to receive your personal deposit wallet address.
               </div>
               <button style={{ ...btn("success"), padding:"10px 24px" }}
-                onClick={() => window.open("mailto:support@vaultx-crypto.com?subject=Deposit%20Wallet%20Request", "_blank")}>
-                📧 Request Deposit Address
+                onClick={() => { if(window.Tawk_API && window.Tawk_API.maximize) { window.Tawk_API.maximize(); } else { window.open('https://tawk.to/chat/6a2e5fe88b30661d42bef351/1jr2id950', '_blank'); } }}>
+                💬 Chat with Support
               </button>
             </div>
           )}

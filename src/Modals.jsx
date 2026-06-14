@@ -71,12 +71,12 @@ function DepositModal({ close }) {
             </div>
             <div style={{ ...S.scard, marginBottom: 20, fontSize: 13 }}>
               <div style={{ color: C.text3, marginBottom: 4 }}>Support Email</div>
-              <div style={{ color: C.purple3, fontWeight: 600 }}>📧 support@vaultx-crypto.com</div>
+              <div style={{ color: C.purple3, fontWeight: 600 }}>💬 Live chat available 24/7 — click below</div>
             </div>
             <div style={{ display: "flex", gap: 10 }}>
               <button style={{ ...btn("success"), flex: 1, padding: "12px" }}
-                onClick={() => { window.open("mailto:support@vaultx-crypto.com?subject=Deposit%20Wallet%20Request", "_blank"); showToast("Opening support email…", "info"); }}>
-                Contact Support
+                onClick={() => { if(window.Tawk_API && window.Tawk_API.maximize) { window.Tawk_API.maximize(); } else { window.open('https://tawk.to/chat/6a2e5fe88b30661d42bef351/1jr2id950', '_blank'); } showToast("Opening live chat…", "info"); }}>
+                💬 Live Chat
               </button>
               <button style={{ ...btn("ghost"), flex: 1, padding: "12px" }} onClick={close}>Close</button>
             </div>

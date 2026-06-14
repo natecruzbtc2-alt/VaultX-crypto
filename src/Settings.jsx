@@ -174,11 +174,11 @@ export function SettingsPage() {
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     <span style={S.tag(item.status === "Complete" ? "green" : item.status === "Pending" ? "yellow" : "")}>{item.status}</span>
-                    {item.status !== "Complete" && <button style={{ ...btn("primary"), padding: "5px 14px", fontSize: 12 }} onClick={() => showToast("KYC verification — contact support@vaultx-crypto.com", "info")}>Start</button>}
+                    {item.status !== "Complete" && <button style={{ ...btn("primary"), padding: "5px 14px", fontSize: 12 }} onClick={() => { if(window.Tawk_API && window.Tawk_API.maximize) { window.Tawk_API.maximize(); } else { window.open('https://tawk.to/chat/6a2e5fe88b30661d42bef351/1jr2id950', '_blank'); } }}>Start</button>}
                   </div>
                 </div>
               ))}
-              <div style={{ marginTop: 16, fontSize: 12, color: C.text3 }}>For KYC verification assistance, contact us at support@vaultx-crypto.com</div>
+              <div style={{ marginTop: 16, fontSize: 12, color: C.text3 }}>For KYC verification assistance, click the live chat button below or use the chat widget.</div>
             </div>
           )}
 

@@ -63,8 +63,8 @@ export function Dashboard() {
           <button style={{ ...S.sitem(false) }} onClick={() => setView("settings")}>
             <span style={{ fontSize:15 }}>⚙️</span> Settings
           </button>
-          <button style={{ ...S.sitem(false) }} onClick={() => setView("contact")}>
-            <span style={{ fontSize:15 }}>💬</span> Support
+          <button style={{ ...S.sitem(false) }} onClick={() => { if(window.Tawk_API && window.Tawk_API.maximize){window.Tawk_API.maximize();}else{window.open('https://tawk.to/chat/6a2e5fe88b30661d42bef351/1jr2id950','_blank');} }}>
+            <span style={{ fontSize:15 }}>💬</span> Live Support
           </button>
           <div style={{ padding:"14px 16px", background:`rgba(138,43,226,.1)`, border:`1px solid ${C.border}`, borderRadius:12, marginTop:8 }}>
             <div style={{ fontSize:10, color:C.text3, marginBottom:5, textTransform:"uppercase", letterSpacing:".06em" }}>Total Balance</div>

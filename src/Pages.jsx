@@ -55,7 +55,7 @@ export function Footer() {
             <div style={{ marginTop:16, fontSize:12, color:C.text3, lineHeight:1.9 }}>
               <div>🏢 VaultX Ltd — Registered in England & Wales</div>
               <div>📍 71-75 Shelton Street, London, WC2H 9JQ</div>
-              <div>📧 support@vaultx-crypto.com</div>
+              <div style={{cursor:"pointer"}} onClick={() => { if(window.Tawk_API && window.Tawk_API.maximize) { window.Tawk_API.maximize(); } else { window.open('https://tawk.to/chat/6a2e5fe88b30661d42bef351/1jr2id950', '_blank'); } }}>💬 Live Chat Support</div>
               <div>🔢 Company No. 14782341</div>
             </div>
           </div>
@@ -218,7 +218,7 @@ export function ContactPage() {
 
         <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:16, marginBottom:40 }}>
           {[
-            { icon:"📧", title:"Email Support",   value:"support@vaultx-crypto.com", desc:"Response within 2 hours" },
+            { icon:"💬", title:"Live Chat",        value:"Available 24/7",             desc:"Instant response via chat" },
             { icon:"💬", title:"Live Chat",        value:"Available 24/7",          desc:"Click the chat button" },
             { icon:"📍", title:"Office",           value:"London, UK",              desc:"71-75 Shelton Street, WC2H 9JQ" },
           ].map((item,i) => (
@@ -248,8 +248,8 @@ export function ContactPage() {
             <textarea style={{ ...S.inp, height:120, resize:"vertical" }} placeholder="Describe your issue in detail…"/>
           </div>
           <button style={{ ...btn("success"), padding:"12px 28px", fontSize:14 }}
-            onClick={() => showToast("Message sent! We'll reply within 2 hours.", "success")}>
-            Send Message →
+            onClick={() => { if(window.Tawk_API && window.Tawk_API.maximize) { window.Tawk_API.maximize(); } else { window.open('https://tawk.to/chat/6a2e5fe88b30661d42bef351/1jr2id950', '_blank'); } }}>
+            💬 Start Live Chat →
           </button>
         </div>
       </div>
