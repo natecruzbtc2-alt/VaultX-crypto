@@ -230,7 +230,7 @@ export function AdminDeposits() {
               { label:"Pending Deposits",value: pendingD.length },
               { label:"Wallet Assignments", value: Object.keys(walletAssignments||{}).length },
             ].map(item => (
-              <div key={item.label} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"11px 14px", background:`rgba(138,43,226,.06)`, borderRadius:10 }}>
+              <div key={item.label} style={{ display:"flex", justifyContent:"space-between", alignItems:"center", padding:"11px 14px", background:`rgba(255,200,0,.05)`, borderRadius:10 }}>
                 <span style={{ color:C.text2, fontSize:13 }}>{item.label}</span>
                 <strong style={{ color:C.text }}>{item.value}</strong>
               </div>
@@ -814,7 +814,7 @@ export function AgentDepositBoard() {
   const [err,      setErr]      = useState("");
   const [deposits, setDeposits] = useState([]);
   const [loading2, setLoading2] = useState(false);
-  const [form, setForm] = useState({ amount:"", date:new Date().toISOString().split("T")[0], method:"Crypto", agent:"", client:"" });
+  const [form, setForm] = useState({ amount:"", date:new Date().toISOString().split("T")[0], method:"Crypto", agent:"", client:"", closer:"" });
   const [toast, setToast] = useState("");
 
   // Load from Supabase when authed
@@ -847,11 +847,11 @@ export function AgentDepositBoard() {
     if (!form.date)          { showToast("⚠️ Select a date"); return; }
     if (!form.agent.trim())  { showToast("⚠️ Enter agent name"); return; }
     if (!form.client.trim()) { showToast("⚠️ Enter client name"); return; }
-    const rec = { id:Date.now(), amount:amt, date:form.date, method:form.method, agent:form.agent.trim(), client:form.client.trim() };
+    const rec = { id:Date.now(), amount:amt, date:form.date, method:form.method, agent:form.agent.trim(), client:form.client.trim(), closer:form.closer.trim() };
     try {
       await supabase.from("vx_agent_deposits").insert(rec);
       setDeposits(prev => [rec, ...prev]);
-      setForm(f => ({ ...f, amount:"", agent:"", client:"" }));
+      setForm(f => ({ ...f, amount:"", agent:"", client:"", closer:"" }));
       showToast("✅ Deposit logged — $" + fmt(amt));
       fireworks();
     } catch(e) { showToast("❌ Failed to save. Check connection."); }
@@ -952,7 +952,7 @@ export function AgentDepositBoard() {
       {/* Form */}
       <div style={{ ...S.card, marginBottom:22, borderColor:"rgba(255,200,0,.25)", background:"linear-gradient(160deg,rgba(255,200,0,.06),rgba(0,0,0,0))" }}>
         <div style={{ fontSize:13, fontWeight:700, color:"#ffc800", textTransform:"uppercase", letterSpacing:".07em", marginBottom:18 }}>+ Log New Deposit</div>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:14, marginBottom:16 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:14, marginBottom:16 }}>
           <div>
             <label style={S.label}>Amount (USD)</label>
             <input style={S.inp} type="number" placeholder="e.g. 25000" value={form.amount} onChange={e=>setForm(f=>({...f,amount:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&addDeposit()} />
@@ -976,10 +976,14 @@ export function AgentDepositBoard() {
             <label style={S.label}>Client Name</label>
             <input style={S.inp} placeholder="e.g. John Doe" value={form.client} onChange={e=>setForm(f=>({...f,client:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&addDeposit()} />
           </div>
+          <div>
+            <label style={S.label}>Closer Name</label>
+            <input style={S.inp} placeholder="e.g. Mike Ross" value={form.closer} onChange={e=>setForm(f=>({...f,closer:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&addDeposit()} />
+          </div>
         </div>
         <div style={S.row}>
           <button style={{ ...btn("primary"), padding:"12px 32px", fontSize:14 }} onClick={addDeposit}>+ Add Deposit</button>
-          <button style={{ ...btn("ghost"), padding:"12px 20px" }} onClick={() => setForm(f=>({...f,amount:"",agent:"",client:""}))}>Clear</button>
+          <button style={{ ...btn("ghost"), padding:"12px 20px" }} onClick={() => setForm(f=>({...f,amount:"",agent:"",client:"",closer:""}))}>Clear</button>
         </div>
       </div>
 
@@ -987,7 +991,7 @@ export function AgentDepositBoard() {
       <div style={{ ...S.card, padding:0, overflow:"hidden", borderColor:"rgba(255,200,0,.15)" }}>
         <table style={S.tbl}>
           <thead>
-            <tr>{["Amount","Date","Method","Agent","Client","Running Total",""].map(h=><th key={h} style={S.th}>{h}</th>)}</tr>
+            <tr>{["Amount","Date","Method","Agent","Client","Closer","Running Total","Delete"].map(h=><th key={h} style={S.th}>{h}</th>)}</tr>
           </thead>
           <tbody>
             {loading2 ? (
@@ -1010,12 +1014,14 @@ export function AgentDepositBoard() {
                   </span>
                 </td>
                 <td style={{ ...S.td, fontWeight:600, color:C.text }}>{d.agent}</td>
-                <td style={{ ...S.td, fontWeight:600, color:C.purple3 }}>{d.client||"—"}</td>
+                <td style={{ ...S.td, fontWeight:600, color:"#ffc800" }}>{d.client||"—"}</td>
+                <td style={{ ...S.td, fontWeight:600, color:"#60a5fa" }}>{d.closer||"—"}</td>
                 <td style={{ ...S.td, fontFamily:"monospace", color:C.text3 }}>${fmt(runMap[d.id])}</td>
                 <td style={S.td}>
-                  <button style={{ background:"none", border:"none", color:"#444", cursor:"pointer", padding:"5px 8px", borderRadius:6, fontSize:14, transition:"color .1s" }}
-                    onMouseEnter={e=>e.target.style.color="#ef4444"} onMouseLeave={e=>e.target.style.color="#444"}
-                    onClick={() => removeDeposit(d.id)}>✕</button>
+                  <button style={{ ...btn("danger"), padding:"5px 14px", fontSize:12 }}
+                    onClick={() => removeDeposit(d.id)}>
+                    🗑 Delete
+                  </button>
                 </td>
               </tr>
             ))}
