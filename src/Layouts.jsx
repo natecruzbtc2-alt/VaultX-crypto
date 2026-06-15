@@ -1,7 +1,7 @@
 import { useApp } from "./AppContext";
 import { C, S, btn, globalCSS } from "./theme";
 import { TickerMini } from "./components";
-import { DashOverview, DashMarkets, DashWallet, DashPortfolio, DashStaking, DashHistory } from "./DashTabs";
+import { DashOverview, DashMarkets, DashWallet, DashPortfolio, DashTrading, DashHistory } from "./DashTabs";
 import { AdminUsers, AdminDeposits, AdminWallets, AdminWithdrawals, AdminPending, AdminFees, AdminMarkets, AdminSettings, AgentDepositBoard } from "./AdminTabs";
 
 // ─── MOBILE BOTTOM NAV ────────────────────────────────────────────────────────
@@ -35,7 +35,7 @@ export function Dashboard() {
     { id:"markets",   icon:"◈", label:"Markets"   },
     { id:"wallet",    icon:"◎", label:"Wallet"    },
     { id:"portfolio", icon:"◑", label:"Portfolio" },
-    { id:"staking",   icon:"◆", label:"Staking"   },
+    { id:"trade",     icon:"◈", label:"Trade"      },
     { id:"history",   icon:"◫", label:"History"   },
   ];
 
@@ -106,7 +106,7 @@ export function Dashboard() {
           {dashTab==="markets"   && <DashMarkets />}
           {dashTab==="wallet"    && <DashWallet />}
           {dashTab==="portfolio" && <DashPortfolio />}
-          {dashTab==="staking"   && <DashStaking />}
+          {dashTab==="trade"     && <DashTrading />}
           {dashTab==="history"   && <DashHistory />}
         </div>
       </div>
