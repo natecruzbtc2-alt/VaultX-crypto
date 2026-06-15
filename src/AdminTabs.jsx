@@ -808,14 +808,18 @@ export function AdminSettings() {
 // ─── AGENT DEPOSIT BOARD ──────────────────────────────────────────────────────
 export function AgentDepositBoard() {
   const { supabase, checkBoardCreds } = useApp();
-  const [authed,   setAuthed]   = useState(false);
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [err,      setErr]      = useState("");
-  const [deposits, setDeposits] = useState([]);
-  const [loading2, setLoading2] = useState(false);
-  const [form, setForm] = useState({ amount:"", date:new Date().toISOString().split("T")[0], method:"Crypto", agent:"", client:"", closer:"" });
-  const [toast, setToast] = useState("");
+  const [authed,        setAuthed]        = useState(false);
+  const [username,      setUsername]      = useState("");
+  const [password,      setPassword]      = useState("");
+  const [err,           setErr]           = useState("");
+  const [deposits,      setDeposits]      = useState([]);
+  const [loading2,      setLoading2]      = useState(false);
+  const [form,          setForm]          = useState({ amount:"", date:new Date().toISOString().split("T")[0], method:"Crypto", agent:"", client:"", closer:"" });
+  const [toast,         setToast]         = useState("");
+  const [editId,        setEditId]        = useState(null);  // null = add mode, id = edit mode
+  const [companyName,   setCompanyName]   = useState(() => localStorage.getItem("vx_board_company") || "");
+  const [companyTag,    setCompanyTag]    = useState(() => localStorage.getItem("vx_board_tag")     || "");
+  const [editingBrand,  setEditingBrand]  = useState(false);
 
   // Load from Supabase when authed
   useEffect(() => {
@@ -847,14 +851,47 @@ export function AgentDepositBoard() {
     if (!form.date)          { showToast("⚠️ Select a date"); return; }
     if (!form.agent.trim())  { showToast("⚠️ Enter agent name"); return; }
     if (!form.client.trim()) { showToast("⚠️ Enter client name"); return; }
-    const rec = { id:Date.now(), amount:amt, date:form.date, method:form.method, agent:form.agent.trim(), client:form.client.trim(), closer:form.closer.trim() };
-    try {
-      await supabase.from("vx_agent_deposits").insert(rec);
-      setDeposits(prev => [rec, ...prev]);
-      setForm(f => ({ ...f, amount:"", agent:"", client:"", closer:"" }));
-      showToast("✅ Deposit logged — $" + fmt(amt));
-      fireworks();
-    } catch(e) { showToast("❌ Failed to save. Check connection."); }
+
+    if (editId) {
+      // ── EDIT MODE ────────────────────────────────────────────────────────
+      const updated = { amount:amt, date:form.date, method:form.method, agent:form.agent.trim(), client:form.client.trim(), closer:form.closer.trim() };
+      try {
+        await supabase.from("vx_agent_deposits").update(updated).eq("id", editId);
+        setDeposits(prev => prev.map(d => d.id === editId ? { ...d, ...updated } : d));
+        showToast("✅ Deposit updated!");
+        setEditId(null);
+        setForm(f => ({ ...f, amount:"", agent:"", client:"", closer:"" }));
+      } catch(e) { showToast("❌ Failed to update."); }
+    } else {
+      // ── ADD MODE ─────────────────────────────────────────────────────────
+      const rec = { id:Date.now(), amount:amt, date:form.date, method:form.method, agent:form.agent.trim(), client:form.client.trim(), closer:form.closer.trim() };
+      try {
+        await supabase.from("vx_agent_deposits").insert(rec);
+        setDeposits(prev => [rec, ...prev]);
+        setForm(f => ({ ...f, amount:"", agent:"", client:"", closer:"" }));
+        showToast("✅ Deposit logged — $" + fmt(amt));
+        fireworks();
+      } catch(e) { showToast("❌ Failed to save. Check connection."); }
+    }
+  };
+
+  const startEdit = (d) => {
+    setEditId(d.id);
+    setForm({ amount:String(d.amount), date:d.date, method:d.method, agent:d.agent||"", client:d.client||"", closer:d.closer||"" });
+    // scroll to form
+    document.querySelector(".__vx_board_form")?.scrollIntoView({ behavior:"smooth", block:"start" });
+  };
+
+  const cancelEdit = () => {
+    setEditId(null);
+    setForm({ amount:"", date:new Date().toISOString().split("T")[0], method:"Crypto", agent:"", client:"", closer:"" });
+  };
+
+  const saveBrand = () => {
+    localStorage.setItem("vx_board_company", companyName);
+    localStorage.setItem("vx_board_tag", companyTag);
+    setEditingBrand(false);
+    showToast("✅ Brand saved!");
   };
 
   const removeDeposit = async (id) => {
@@ -924,6 +961,36 @@ export function AgentDepositBoard() {
       {/* Toast */}
       {toast && <div style={{ position:"fixed", bottom:24, right:24, background:toast.startsWith("✅")?"#ffc800":"#ef4444", color:toast.startsWith("✅")?"#000":"#fff", padding:"12px 22px", borderRadius:12, fontSize:13, fontWeight:700, zIndex:9999, boxShadow:"0 8px 30px rgba(0,0,0,.4)" }}>{toast}</div>}
 
+      {/* Brand Box */}
+      {editingBrand ? (
+        <div style={{ ...S.card, marginBottom:18, borderColor:"rgba(255,200,0,.3)" }}>
+          <div style={{ fontSize:13, fontWeight:700, color:"#ffc800", marginBottom:14 }}>🏢 Company Brand</div>
+          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr auto auto", gap:12, alignItems:"flex-end" }}>
+            <div>
+              <label style={S.label}>Company Name</label>
+              <input style={S.inp} placeholder="e.g. VaultX Ltd" value={companyName} onChange={e=>setCompanyName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&saveBrand()}/>
+            </div>
+            <div>
+              <label style={S.label}>Tagline (optional)</label>
+              <input style={S.inp} placeholder="e.g. Elite Crypto Trading" value={companyTag} onChange={e=>setCompanyTag(e.target.value)} onKeyDown={e=>e.key==="Enter"&&saveBrand()}/>
+            </div>
+            <button style={{ ...btn("success"), padding:"10px 20px" }} onClick={saveBrand}>Save</button>
+            <button style={{ ...btn("ghost"), padding:"10px 14px" }} onClick={() => setEditingBrand(false)}>Cancel</button>
+          </div>
+        </div>
+      ) : companyName ? (
+        <div style={{ marginBottom:18, display:"flex", alignItems:"center", gap:14 }}>
+          <div style={{ background:"linear-gradient(135deg,#e6b400,#ffd633)", borderRadius:14, padding:"12px 24px" }}>
+            <div style={{ fontSize:22, fontWeight:900, color:"#000", letterSpacing:"-.5px" }}>{companyName}</div>
+            {companyTag && <div style={{ fontSize:12, color:"rgba(0,0,0,.65)", marginTop:2 }}>{companyTag}</div>}
+          </div>
+          <div style={{ fontSize:13, color:"#ffc800", fontStyle:"italic", opacity:.7 }}>Good Luck! 🍀</div>
+          <button style={{ ...btn("ghost"), padding:"5px 12px", fontSize:11, marginLeft:"auto" }} onClick={() => setEditingBrand(true)}>✏️ Edit</button>
+        </div>
+      ) : (
+        <button style={{ ...btn("ghost"), padding:"7px 16px", fontSize:12, marginBottom:14 }} onClick={() => setEditingBrand(true)}>🏢 Add Company Brand</button>
+      )}
+
       {/* Header */}
       <div style={{ ...S.rowsb, marginBottom:22 }}>
         <div>
@@ -950,8 +1017,13 @@ export function AgentDepositBoard() {
       </div>
 
       {/* Form */}
-      <div style={{ ...S.card, marginBottom:22, borderColor:"rgba(255,200,0,.25)", background:"linear-gradient(160deg,rgba(255,200,0,.06),rgba(0,0,0,0))" }}>
-        <div style={{ fontSize:13, fontWeight:700, color:"#ffc800", textTransform:"uppercase", letterSpacing:".07em", marginBottom:18 }}>+ Log New Deposit</div>
+      <div className="__vx_board_form" style={{ ...S.card, marginBottom:22, borderColor:editId?"rgba(255,200,0,.5)":"rgba(255,200,0,.25)", background:editId?"linear-gradient(160deg,rgba(255,200,0,.09),rgba(0,0,0,0))":"linear-gradient(160deg,rgba(255,200,0,.06),rgba(0,0,0,0))" }}>
+        <div style={{ ...S.rowsb, marginBottom:18 }}>
+          <div style={{ fontSize:13, fontWeight:700, color:"#ffc800", textTransform:"uppercase", letterSpacing:".07em" }}>
+            {editId ? "✏️ Edit Deposit" : "+ Log New Deposit"}
+          </div>
+          {editId && <button style={{ ...btn("ghost"), padding:"5px 14px", fontSize:12 }} onClick={cancelEdit}>Cancel Edit</button>}
+        </div>
         <div style={{ display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:14, marginBottom:16 }}>
           <div>
             <label style={S.label}>Amount (USD)</label>
@@ -982,8 +1054,13 @@ export function AgentDepositBoard() {
           </div>
         </div>
         <div style={S.row}>
-          <button style={{ ...btn("primary"), padding:"12px 32px", fontSize:14 }} onClick={addDeposit}>+ Add Deposit</button>
-          <button style={{ ...btn("ghost"), padding:"12px 20px" }} onClick={() => setForm(f=>({...f,amount:"",agent:"",client:"",closer:""}))}>Clear</button>
+          <button style={{ ...btn("primary"), padding:"12px 32px", fontSize:14 }} onClick={addDeposit}>
+            {editId ? "💾 Save Changes" : "+ Add Deposit"}
+          </button>
+          {editId
+            ? <button style={{ ...btn("ghost"), padding:"12px 20px" }} onClick={cancelEdit}>Cancel</button>
+            : <button style={{ ...btn("ghost"), padding:"12px 20px" }} onClick={() => setForm(f=>({...f,amount:"",agent:"",client:"",closer:""}))}>Clear</button>
+          }
         </div>
       </div>
 
@@ -1018,10 +1095,16 @@ export function AgentDepositBoard() {
                 <td style={{ ...S.td, fontWeight:600, color:"#60a5fa" }}>{d.closer||"—"}</td>
                 <td style={{ ...S.td, fontFamily:"monospace", color:C.text3 }}>${fmt(runMap[d.id])}</td>
                 <td style={S.td}>
-                  <button style={{ ...btn("danger"), padding:"5px 14px", fontSize:12 }}
-                    onClick={() => removeDeposit(d.id)}>
-                    🗑 Delete
-                  </button>
+                  <div style={S.row}>
+                    <button style={{ ...btn("ghost"), padding:"5px 12px", fontSize:12 }}
+                      onClick={() => startEdit(d)}>
+                      ✏️ Edit
+                    </button>
+                    <button style={{ ...btn("danger"), padding:"5px 12px", fontSize:12 }}
+                      onClick={() => removeDeposit(d.id)}>
+                      🗑 Delete
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
