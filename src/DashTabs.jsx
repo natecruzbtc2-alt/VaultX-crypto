@@ -86,9 +86,9 @@ export function DashOverview() {
 
       {/* Deposit wallet notification */}
       {wallet && (
-        <div style={{ background:"rgba(138,43,226,.08)", border:`1px solid ${C.border}`, borderRadius:12, padding:"14px 18px", marginBottom:20, display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:12 }}>
+        <div style={{ background:"rgba(255,200,0,.06)", border:`1px solid ${C.border}`, borderRadius:12, padding:"14px 18px", marginBottom:20, display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:12 }}>
           <div>
-            <div style={{ fontWeight:700, color:C.purple3, fontSize:14 }}>💰 Deposit Address Ready</div>
+            <div style={{ fontWeight:700, color:"#ffc800", fontSize:14 }}>💰 Deposit Address Ready</div>
             <div style={{ fontSize:13, color:C.text2, marginTop:4 }}>
               Your {wallet.coin} deposit address has been assigned. Click to view.
             </div>
@@ -111,9 +111,9 @@ export function DashOverview() {
       {/* Balance cards */}
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(160px, 1fr))", gap:14, marginBottom:22 }}>
         {[
-          { label:"Total Balance",    val:"$"+fmt(totalVal),           sub:"All assets combined",    c:C.purple3 },
+          { label:"Total Balance",    val:"$"+fmt(totalVal),           sub:"All assets combined",    c:"#ffc800" },
           { label:"Available Cash",   val:"$"+fmt(user?.balance||0),   sub:"Ready to trade or withdraw", c:C.green },
-          { label:"Crypto Value",     val:"$"+fmt(totalCryptoValue),   sub:holdings.length+" asset"+(holdings.length!==1?"s":"")+" held", c:C.accent },
+          { label:"Crypto Value",     val:"$"+fmt(totalCryptoValue),   sub:holdings.length+" asset"+(holdings.length!==1?"s":"")+" held", c:"#60a5fa" },
           { label:"Est. Monthly Yield", val:"$"+fmt(totalCryptoValue*.005,2), sub:"From staking rewards", c:C.gold },
         ].map((s,i) => (
           <div key={i} style={{ ...S.card, position:"relative", overflow:"hidden", cursor:"default" }}>
@@ -221,7 +221,7 @@ export function DashOverview() {
               })}
               <div style={{ marginTop:12, padding:"10px 0", borderTop:`1px solid ${C.border2}`, display:"flex", justifyContent:"space-between" }}>
                 <span style={{ fontSize:13, color:C.text3 }}>Total Crypto Value</span>
-                <span style={{ fontSize:14, fontWeight:700, color:C.purple3 }}>${fmt(totalCryptoValue)}</span>
+                <span style={{ fontSize:14, fontWeight:700, color:"#ffc800" }}>${fmt(totalCryptoValue)}</span>
               </div>
             </>
           )}
@@ -287,7 +287,7 @@ export function DashMarkets() {
               <div style={{ fontSize:22, fontWeight:800, color:C.text, margin:"10px 0" }}>
                 ${p.price < 1 ? p.price.toFixed(4) : fmt(p.price)}
               </div>
-              <MiniChart prices={p.spark} color={up?C.purple:C.red}/>
+              <MiniChart prices={p.spark} color={up?"#ffc800":C.red}/>
               <div style={{ marginTop:8, display:"flex", justifyContent:"space-between", fontSize:11 }}>
                 <span style={{ color:C.green }}>H: ${fmt(p.high||p.price*1.03)}</span>
                 <span style={{ color:C.red }}>L: ${fmt(p.low||p.price*0.97)}</span>
@@ -471,7 +471,7 @@ export function DashWallet() {
                   <span style={{ ...S.tag("green"), marginLeft:"auto" }}>Active</span>
                 </div>
                 <div style={{ fontSize:11, color:C.text3, marginBottom:6, textTransform:"uppercase", letterSpacing:".06em" }}>Deposit Address</div>
-                <div style={{ fontFamily:"monospace", fontSize:12, color:C.text, wordBreak:"break-all", lineHeight:1.8, background:`rgba(138,43,226,.06)`, padding:"10px 14px", borderRadius:8 }}>
+                <div style={{ fontFamily:"monospace", fontSize:12, color:C.text, wordBreak:"break-all", lineHeight:1.8, background:"rgba(255,255,255,.04)", border:"1px solid rgba(255,200,0,.2)", padding:"10px 14px", borderRadius:8 }}>
                   {wallet.address}
                 </div>
                 {wallet.fee && (
@@ -553,7 +553,7 @@ export function DashWallet() {
         {holdings.length > 0 && (
           <div style={{ paddingTop:14, display:"flex", justifyContent:"space-between" }}>
             <span style={{ fontSize:13, color:C.text3 }}>Total Portfolio Value</span>
-            <span style={{ fontSize:15, fontWeight:800, color:C.purple3 }}>
+            <span style={{ fontSize:15, fontWeight:800, color:"#ffc800" }}>
               ${fmt((user?.balance||0) + holdings.reduce((s,h)=>s+h.qty*(prices[h.sym]?.price||0),0))}
             </span>
           </div>
@@ -582,7 +582,7 @@ export function DashPortfolio() {
       <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(180px, 1fr))", gap:14, marginBottom:22 }}>
         {[
           { label:"Total Invested",  val:"$"+fmt(totalCost),  c:C.text2 },
-          { label:"Current Value",   val:"$"+fmt(totalVal),   c:C.purple3 },
+          { label:"Current Value",   val:"$"+fmt(totalVal),   c:"#ffc800" },
           { label:"Total P&L",       val:(totalPnl>=0?"+":"")+fmt(totalPnl)+" ("+(totalCost>0?(totalPnl/totalCost*100).toFixed(2):0)+"%))", c:totalPnl>=0?C.green:C.red },
         ].map((s,i) => (
           <div key={i} style={{ ...S.card, textAlign:"center" }}>
@@ -618,7 +618,7 @@ export function DashPortfolio() {
                     </div>
                     <span style={{ fontSize:13, fontWeight:700, color:C.text }}>{pct.toFixed(1)}% · ${fmt(a.val)}</span>
                   </div>
-                  <div style={{ height:8, background:`rgba(138,43,226,.1)`, borderRadius:4, overflow:"hidden" }}>
+                  <div style={{ height:8, background:`rgba(255,200,0,.08)`, borderRadius:4, overflow:"hidden" }}>
                     <div style={{ height:"100%", width:pct+"%", background:`linear-gradient(90deg,${c.color}80,${c.color})`, borderRadius:4, transition:"width .5s" }}/>
                   </div>
                 </div>
@@ -722,7 +722,7 @@ export function DashStaking() {
       {staking.length > 0 && (
         <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(180px, 1fr))", gap:14, marginBottom:22 }}>
           {[
-            { label:"Total Staked Value", val:"$"+fmt(totalStakedVal), c:C.purple3 },
+            { label:"Total Staked Value", val:"$"+fmt(totalStakedVal), c:"#ffc800" },
             { label:"Est. Monthly Yield", val:"$"+fmt(totalMonthly,2), c:C.green },
             { label:"Est. Annual Yield",  val:"$"+fmt(totalMonthly*12,2), c:C.gold },
           ].map((s,i) => (

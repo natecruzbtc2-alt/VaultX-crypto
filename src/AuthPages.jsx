@@ -45,23 +45,49 @@ export function LandingPage() {
       <TickerBar />
       <div style={{ maxWidth: 1140, margin: "0 auto", padding: "clamp(24px, 5vw, 56px) 16px 0" }}>
         {/* Hero */}
-        <div style={{ textAlign: "center", marginBottom: 64 }}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(138,43,226,.1)", border: `1px solid ${C.border}`, borderRadius: 20, padding: "5px 18px", fontSize: 12, color: C.purple3, marginBottom: 24 }}>
-            <span style={S.ldot} /> Live market data · Real-time trading · UK Regulated
+        <div style={{ textAlign: "center", marginBottom: 56, padding: "0 16px" }}>
+          {/* Trust badge */}
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(255,200,0,.1)", border: "1px solid rgba(255,200,0,.3)", borderRadius: 24, padding: "7px 18px", fontSize: 12, color: "#ffc800", fontWeight: 600, marginBottom: 28, letterSpacing: ".03em" }}>
+            <span style={{ width:7, height:7, borderRadius:"50%", background:"#22c55e", display:"inline-block", boxShadow:"0 0 8px #22c55e" }}/>
+            Live · Real-time prices · UK Registered Company
           </div>
-          <h1 style={{ fontSize: "clamp(28px, 5vw, 58px)", fontWeight: 800, letterSpacing: "-1.5px", lineHeight: 1.08, color: C.text, marginBottom: 20 }}>
-            The exclusive way<br />to trade{" "}
-            <span style={{ background: `linear-gradient(135deg,${C.purple},${C.purple3})`, WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>crypto.</span>
+
+          {/* Main headline */}
+          <h1 style={{ fontSize: "clamp(32px, 5.5vw, 64px)", fontWeight: 900, letterSpacing: "-2px", lineHeight: 1.05, color: "#fff", marginBottom: 22 }}>
+            The smarter way<br />to trade{" "}
+            <span style={{ background: "linear-gradient(135deg,#e6b400,#ffd633,#ffaa00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+              crypto.
+            </span>
           </h1>
-          <p style={{ color: C.text3, fontSize: "clamp(14px, 2.5vw, 17px)", maxWidth: 520, margin: "0 auto 32px", lineHeight: 1.7 }}>
-            Real-time prices, portfolio analytics, staking rewards and instant transfers — all in one elite vault platform. Trusted by 50,000+ traders worldwide.
+
+          {/* Sub */}
+          <p style={{ color: "#888", fontSize: "clamp(15px, 2vw, 18px)", maxWidth: 560, margin: "0 auto 36px", lineHeight: 1.75 }}>
+            Professional-grade portfolio management, real-time market data and instant transfers — trusted by over <strong style={{ color:"#ccc" }}>50,000 traders</strong> worldwide.
           </p>
-          <div style={{ display: "flex", justifyContent: "center", gap: 14, flexWrap: "wrap", width:"100%" }}>
-            <button style={{ ...btn(), padding: "14px 36px", fontSize: 15 }} onClick={() => setView("register")}>Start Trading Free</button>
-            <button style={{ ...btn("ghost"), padding: "14px 36px", fontSize: 15 }} onClick={() => setView("login")}>Sign In</button>
+
+          {/* CTA Buttons */}
+          <div style={{ display: "flex", justifyContent: "center", gap: 14, flexWrap: "wrap", marginBottom: 28 }}>
+            <button style={{ ...btn(), padding: "15px 40px", fontSize: 16, borderRadius: 12, boxShadow:"0 0 40px rgba(255,200,0,.35)" }} onClick={() => setView("register")}>
+              Open Free Account →
+            </button>
+            <button style={{ ...btn("ghost"), padding: "15px 40px", fontSize: 16, borderRadius: 12 }} onClick={() => setView("login")}>
+              Sign In
+            </button>
           </div>
-          <div style={{ marginTop: 16, fontSize: 12, color: C.text3 }}>
-            ✓ No hidden fees &nbsp;·&nbsp; ✓ Secure & encrypted &nbsp;·&nbsp; ✓ 24/7 support &nbsp;·&nbsp; ✓ VaultX Ltd — UK Registered
+
+          {/* Trust signals */}
+          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
+            {[
+              { icon: "🔐", text: "Bank-grade security" },
+              { icon: "⚡", text: "Instant execution" },
+              { icon: "🏢", text: "UK Regulated" },
+              { icon: "💬", text: "24/7 Live support" },
+            ].map((t, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#666" }}>
+                <span>{t.icon}</span>
+                <span>{t.text}</span>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -69,7 +95,7 @@ export function LandingPage() {
         <div style={{ ...S.card, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 0, marginBottom: 40, padding: 0, overflow: "hidden" }}>
           {[["$2.4T", "Total Market Cap"], ["$94B", "24h Volume"], ["50,000+", "Active Traders"], ["0.10%", "Trading Fee"]].map(([v, l], i) => (
             <div key={i} style={{ padding: "22px 28px", borderRight: i < 3 ? `1px solid ${C.border2}` : "none" }}>
-              <div style={{ fontSize: 26, fontWeight: 700, color: C.purple3 }}>{v}</div>
+              <div style={{ fontSize: 26, fontWeight: 700, color: "#ffc800" }}>{v}</div>
               <div style={{ fontSize: 12, color: C.text3, marginTop: 4 }}>{l}</div>
             </div>
           ))}
@@ -217,7 +243,7 @@ export function LoginPage() {
               </div>
               <button style={{ ...btn(), width: "100%", padding: "13px", fontSize: 15 }} onClick={doLogin}>Sign In →</button>
               <div style={{ textAlign: "center", fontSize: 13, color: C.text3, marginTop: 20 }}>
-                No account?{" "}<span style={{ color: C.purple3, cursor: "pointer", fontWeight: 600 }} onClick={() => setView("register")}>Create one free</span>
+                No account?{" "}<span style={{ color: "#ffc800", cursor: "pointer", fontWeight: 600 }} onClick={() => setView("register")}>Create one free</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between", marginTop: 14 }}>
                 <span style={{ fontSize: 12, color: C.text3, cursor: "pointer" }} onClick={() => setView("contact")}>Forgot password?</span>
@@ -319,12 +345,12 @@ export function RegisterPage() {
           </div>
           {/* Terms checkbox */}
           <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 24 }}>
-            <input type="checkbox" id="terms" checked={agreed} onChange={e => setAgreed(e.target.checked)} style={{ marginTop: 2, accentColor: C.purple, width: 16, height: 16, flexShrink: 0 }} />
+            <input type="checkbox" id="terms" checked={agreed} onChange={e => setAgreed(e.target.checked)} style={{ marginTop: 2, accentColor: "#ffc800", width: 16, height: 16, flexShrink: 0 }} />
             <label htmlFor="terms" style={{ fontSize: 13, color: C.text3, lineHeight: 1.6, cursor: "pointer" }}>
               I agree to the{" "}
-              <span style={{ color: C.purple3, cursor: "pointer" }} onClick={() => setView("terms")}>Terms of Service</span>
+              <span style={{ color: "#ffc800", cursor: "pointer" }} onClick={() => setView("terms")}>Terms of Service</span>
               {" "}and{" "}
-              <span style={{ color: C.purple3, cursor: "pointer" }} onClick={() => setView("privacy")}>Privacy Policy</span>
+              <span style={{ color: "#ffc800", cursor: "pointer" }} onClick={() => setView("privacy")}>Privacy Policy</span>
               . I confirm I am 18+ years old.
             </label>
           </div>
@@ -332,7 +358,7 @@ export function RegisterPage() {
             {saving ? "Creating Account…" : "Create Account →"}
           </button>
           <div style={{ textAlign: "center", fontSize: 13, color: C.text3, marginTop: 20 }}>
-            Already have an account?{" "}<span style={{ color: C.purple3, cursor: "pointer", fontWeight: 600 }} onClick={() => setView("login")}>Sign in</span>
+            Already have an account?{" "}<span style={{ color: "#ffc800", cursor: "pointer", fontWeight: 600 }} onClick={() => setView("login")}>Sign in</span>
           </div>
         </div>
       </div>
