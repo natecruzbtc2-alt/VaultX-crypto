@@ -1458,6 +1458,20 @@ export function AdminCRM() {
         }
 
         const validStatuses = ["New R","New","Call Again","VM","NA","In The Money"];
+        // Find which column index actually contains the NAME header
+        // Skip leading garbage columns (like column A in your file)
+        const nameColIdx = h.findIndex(hh => hh==="name"||hh==="first_name"||hh==="firstname");
+        const colOffset = nameColIdx > 0 ? nameColIdx : 0;
+
+        // Re-map colIdx with offset if needed
+        if (colOffset > 0 && matched < 2) {
+          Object.assign(colIdx,{
+            first_name:colOffset+0, last_name:colOffset+1, state:colOffset+2,
+            phone:colOffset+3, email:colOffset+4, status:colOffset+5,
+            deposit:colOffset+6, balance:colOffset+7, security_code:colOffset+8
+          });
+        }
+
         const rows = lines.slice(1).map((line,i)=>{
           if(!line.trim()) return null;
           const vals = parseRow(line);
