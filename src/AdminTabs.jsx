@@ -3,6 +3,82 @@ import { useApp, usePrices, COINS, BASE_PRICES, fmt, fmtCrypto, createHoldings, 
 import { C, S, btn } from "./theme";
 import { CoinIcon, Tag, EmptyState } from "./components";
 
+// ─── EXCEL EXPORT ─────────────────────────────────────────────────────────────
+function exportToExcel(deposits, companyName) {
+  const fmtDate = s => {
+    if (!s) return '';
+    try { return new Date(s+'T00:00:00').toLocaleDateString('en-GB'); } catch(e) { return s; }
+  };
+
+  // Build CSV with BOM for Excel UTF-8
+  const headers = ['#','Amount (USD)','Date','Method','Agent','Client','Closer','Company','Running Total'];
+  let running = 0;
+  const rows = [...deposits].reverse().map((d, i) => {
+    running += d.amount;
+    return [
+      i + 1,
+      d.amount,
+      fmtDate(d.date),
+      d.method,
+      d.agent || '',
+      d.client || '',
+      d.closer || '',
+      companyName || '',
+      running.toFixed(2),
+    ];
+  }).reverse(); // back to newest first
+
+  // Recalculate running total newest first for display
+  let run2 = 0;
+  const rev = [...deposits].reverse();
+  const runMap = {};
+  rev.forEach(d => { run2 += d.amount; runMap[d.id] = run2; });
+
+  const finalRows = deposits.map((d, i) => [
+    i + 1,
+    d.amount,
+    fmtDate(d.date),
+    d.method,
+    d.agent || '',
+    d.client || '',
+    d.closer || '',
+    companyName || '',
+    runMap[d.id]?.toFixed(2) || '',
+  ]);
+
+  const total = deposits.reduce((a, d) => a + d.amount, 0);
+  const crypto = deposits.filter(d=>d.method==='Crypto').reduce((a,d)=>a+d.amount,0);
+  const wire   = deposits.filter(d=>d.method==='Wire').reduce((a,d)=>a+d.amount,0);
+
+  let csv = '\uFEFF'; // BOM for Excel
+  // Title row
+  if (companyName) csv += `${companyName} — Agent Deposit Report\n`;
+  csv += `Exported: ${new Date().toLocaleString('en-GB')}\n\n`;
+  // Headers
+  csv += headers.map(h => `"${h}"`).join(',') + '\n';
+  // Data rows
+  finalRows.forEach(row => {
+    csv += row.map(v => `"${v}"`).join(',') + '\n';
+  });
+  // Summary
+  csv += `\n`;
+  csv += `"SUMMARY"\n`;
+  csv += `"Grand Total","$${total.toFixed(2)}"\n`;
+  csv += `"Via Crypto","$${crypto.toFixed(2)}"\n`;
+  csv += `"Via Wire","$${wire.toFixed(2)}"\n`;
+  csv += `"Total Entries","${deposits.length}"\n`;
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = `${companyName||'VaultX'}_Deposits_${new Date().toISOString().split('T')[0]}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 // ─── ADMIN USERS ──────────────────────────────────────────────────────────────
 export function AdminUsers() {
   const { users, setUsers, setModal, showToast, showAlert } = useApp();
@@ -1132,9 +1208,14 @@ export function AgentDepositBoard() {
           </tbody>
         </table>
         {deposits.length > 0 && (
-          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"16px 20px", background:"rgba(255,200,0,.04)", borderTop:"1px solid rgba(255,200,0,.15)" }}>
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"16px 20px", background:"rgba(255,200,0,.04)", borderTop:"1px solid rgba(255,200,0,.15)", flexWrap:"wrap", gap:10 }}>
             <span style={{ fontSize:11, fontWeight:700, color:C.text3, textTransform:"uppercase", letterSpacing:".1em" }}>Grand Total</span>
-            <span style={{ fontSize:24, fontWeight:800, color:"#ffc800", fontFamily:"monospace" }}>${fmt(total)}</span>
+            <div style={{ display:"flex", alignItems:"center", gap:12 }}>
+              <span style={{ fontSize:24, fontWeight:800, color:"#ffc800", fontFamily:"monospace" }}>${fmt(total)}</span>
+              <button style={{ ...btn("success"), padding:"8px 18px", fontSize:13 }} onClick={() => exportToExcel(deposits, companyName)}>
+                📊 Export to Excel
+              </button>
+            </div>
           </div>
         )}
       </div>
