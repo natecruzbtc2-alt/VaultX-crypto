@@ -1505,7 +1505,7 @@ export function AdminCRM() {
           const iBalance = getIdx('balance','total') || 8;
           const iCode    = getIdx('code','security_code','security') || 9;
 
-          const cleanNum = v => parseFloat((v||'0').replace(/[$",\s+ACQ-\+ACI-]/g,'').replace(/,/g,'')) || 0;
+          const cleanNum = v => parseFloat((v||'0').replace(/[^0-9.]/g,'')) || 0;
 
           rows = values.map((vals, i) => {
             const get = idx => (idx >= 0 && idx < vals.length) ? vals[idx] : '';
@@ -1572,7 +1572,7 @@ export function AdminCRM() {
             Object.assign(colIdx,{first_name:1,last_name:2,state:3,phone:4,email:5,status:6,deposit:7,balance:8,security_code:9});
           }
 
-          const cleanNum = v => parseFloat((v||'0').replace(/[$",\s]/g,'').replace(/,(?=\d{3})/g,'')) || 0;
+          const cleanNum = v => parseFloat((v||'0').replace(/[^0-9.]/g,'')) || 0;
           const validStatuses = ['New R','New','Call Again','VM','NA','In The Money'];
 
           rows = dataLines.slice(1).map((line,i) => {
