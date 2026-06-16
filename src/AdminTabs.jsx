@@ -1256,18 +1256,40 @@ export function AdminCRM() {
   const [filterStat, setFilterStat] = useState("All");
   const [showForm,   setShowForm]   = useState(false);
   const [editClient, setEditClient] = useState(null);
-  const [showDetail, setShowDetail] = useState(null);
-  const [form,       setForm]       = useState({
-    first_name:"", last_name:"", phone:"", email:"",
-    status:"New", amount_deposited:"", security_code:"", notes:"", agent:""
+  const [showImport, setShowImport] = useState(false);
+  const [importRows, setImportRows] = useState([]);
+  const [importing,  setImporting]  = useState(false);
+  const [form, setForm] = useState({
+    first_name:"", last_name:"", state:"", phone:"", email:"",
+    status:"New R", deposit:"", balance:"", security_code:"", notes:"", agent:""
   });
 
-  // ── LOAD ────────────────────────────────────────────────────────────────────
+  const CRM_STATUSES = [
+    { id:"New R",        color:"#60a5fa", bg:"rgba(96,165,250,.12)"   },
+    { id:"Call Again",   color:"#a78bfa", bg:"rgba(167,139,250,.12)"  },
+    { id:"VM",           color:"#fbbf24", bg:"rgba(251,191,36,.12)"   },
+    { id:"NA",           color:"#f87171", bg:"rgba(248,113,113,.12)"  },
+    { id:"In The Money", color:"#ffc800", bg:"rgba(255,200,0,.18)"    },
+  ];
+
+  const StatusBadge = ({ status }) => {
+    const s = CRM_STATUSES.find(x => x.id === status) || CRM_STATUSES[0];
+    return (
+      <span style={{ display:"inline-flex", alignItems:"center", padding:"3px 10px", borderRadius:20, fontSize:11, fontWeight:700, color:s.color, background:s.bg, border:`1px solid ${s.color}40`, whiteSpace:"nowrap" }}>
+        {status === "In The Money" ? "💰 In The Money" : status}
+      </span>
+    );
+  };
+
+  const genCode = () => {
+    const words = ["ALPHA","BRAVO","DELTA","FOXTROT","GOLD","HOTEL","JULIET","NOVA","OSCAR","ROMEO","SIERRA","TITAN","VAULT","PRIME","APEX","OMEGA","NEXUS","WHISKEY","ZULU","ECHO"];
+    return words[Math.floor(Math.random()*words.length)] + "-" + Math.floor(100+Math.random()*900);
+  };
+
   useEffect(() => {
     loadClients();
-    // Realtime
     if (!supabase) return;
-    const ch = supabase.channel("vx_crm_rt")
+    const ch = supabase.channel("vx_crm_rt2")
       .on("postgres_changes", { event:"*", schema:"public", table:"vx_crm" }, loadClients)
       .subscribe();
     return () => supabase.removeChannel(ch);
@@ -1281,30 +1303,28 @@ export function AdminCRM() {
     setLoading(false);
   };
 
-  // ── SAVE ────────────────────────────────────────────────────────────────────
   const saveClient = async () => {
-    if (!form.first_name.trim() || !form.last_name.trim()) { showToast("⚠️ First and last name required", "info"); return; }
+    if (!form.first_name.trim() && !form.last_name.trim()) { showToast("⚠️ Name required", "info"); return; }
     const now = new Date().toISOString();
+    const payload = {
+      ...form,
+      deposit: parseFloat(form.deposit)||0,
+      balance: parseFloat(form.balance)||0,
+      security_code: form.security_code || genCode(),
+    };
     if (editClient) {
-      const updated = { ...form, amount_deposited: parseFloat(form.amount_deposited)||0, updated_at: now };
       try {
-        await supabase.from("vx_crm").update(updated).eq("id", editClient.id);
-        setClients(prev => prev.map(c => c.id === editClient.id ? { ...c, ...updated } : c));
-        showToast("✅ Client updated", "success");
-      } catch(e) { showToast("❌ Failed to update", "info"); }
+        await supabase.from("vx_crm").update({ ...payload, updated_at:now }).eq("id", editClient.id);
+        setClients(prev => prev.map(c => c.id===editClient.id ? {...c,...payload} : c));
+        showToast("✅ Updated", "success");
+      } catch(e) { showToast("❌ Failed","info"); }
     } else {
-      const rec = {
-        id: `CRM${Date.now()}`,
-        ...form,
-        amount_deposited: parseFloat(form.amount_deposited) || 0,
-        security_code: form.security_code || genSecurityCode(),
-        created_at: now, updated_at: now,
-      };
+      const rec = { id:`CRM${Date.now()}`, ...payload, amount_deposited:payload.deposit, created_at:now, updated_at:now };
       try {
         await supabase.from("vx_crm").insert(rec);
-        setClients(prev => [rec, ...prev]);
-        showToast("✅ Client added", "success");
-      } catch(e) { showToast("❌ Failed to save", "info"); }
+        setClients(prev => [rec,...prev]);
+        showToast("✅ Client added","success");
+      } catch(e) { showToast("❌ Failed","info"); }
     }
     resetForm();
   };
@@ -1314,260 +1334,359 @@ export function AdminCRM() {
     try {
       await supabase.from("vx_crm").delete().eq("id", id);
       setClients(prev => prev.filter(c => c.id !== id));
-      if (showDetail?.id === id) setShowDetail(null);
-      showToast("Client removed", "info");
+      showToast("Deleted","info");
     } catch(e) {}
   };
 
   const updateStatus = async (id, status) => {
     try {
-      await supabase.from("vx_crm").update({ status, updated_at: new Date().toISOString() }).eq("id", id);
-      setClients(prev => prev.map(c => c.id === id ? { ...c, status } : c));
-      if (showDetail?.id === id) setShowDetail(prev => ({ ...prev, status }));
+      await supabase.from("vx_crm").update({ status, updated_at:new Date().toISOString() }).eq("id", id);
+      setClients(prev => prev.map(c => c.id===id ? {...c,status} : c));
     } catch(e) {}
   };
 
+  const startEdit = (c) => {
+    setForm({
+      first_name: c.first_name||"", last_name: c.last_name||"",
+      state: c.state||"", phone: c.phone||"", email: c.email||"",
+      status: c.status||"New R",
+      deposit: c.deposit||c.amount_deposited||"",
+      balance: c.balance||"",
+      security_code: c.security_code||"", notes: c.notes||"", agent: c.agent||""
+    });
+    setEditClient(c);
+    setShowForm(true);
+  };
+
   const resetForm = () => {
-    setForm({ first_name:"", last_name:"", phone:"", email:"", status:"New", amount_deposited:"", security_code:"", notes:"", agent:"" });
+    setForm({ first_name:"", last_name:"", state:"", phone:"", email:"", status:"New R", deposit:"", balance:"", security_code:"", notes:"", agent:"" });
     setEditClient(null);
     setShowForm(false);
   };
 
-  const startEdit = (c) => {
-    setForm({ first_name:c.first_name||"", last_name:c.last_name||"", phone:c.phone||"", email:c.email||"", status:c.status||"New", amount_deposited:c.amount_deposited||"", security_code:c.security_code||"", notes:c.notes||"", agent:c.agent||"" });
-    setEditClient(c);
-    setShowForm(true);
-    setShowDetail(null);
-  };
-
+  // ── EXPORT ──────────────────────────────────────────────────────────────────
   const exportCSV = () => {
-    const headers = ["ID","First Name","Last Name","Phone","Email","Status","Amount Deposited","Security Code","Agent","Notes","Created"];
     let csv = "\uFEFF";
-    csv += headers.map(h=>`"${h}"`).join(",") + "\n";
+    csv += ["NAME","LAST NAME","STATE","NUMBER","EMAIL","STATUS","DEPOSIT","BALANCE","CODE"].map(h=>`"${h}"`).join(",") + "\n";
     filtered.forEach(c => {
-      csv += [c.id,c.first_name,c.last_name,c.phone,c.email,c.status,c.amount_deposited,c.security_code,c.agent,c.notes,c.created_at?.split("T")[0]].map(v=>`"${v||""}"`).join(",") + "\n";
+      csv += [
+        c.first_name, c.last_name, c.state||"", c.phone, c.email,
+        c.status, c.deposit||c.amount_deposited||0, c.balance||0, c.security_code
+      ].map(v=>`"${v||""}"`).join(",") + "\n";
     });
     const blob = new Blob([csv], { type:"text/csv;charset=utf-8;" });
-    const url  = URL.createObjectURL(blob);
-    const a    = document.createElement("a");
-    a.href = url; a.download = `VaultX_CRM_${new Date().toISOString().split("T")[0]}.csv`;
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `VaultX_CRM_${new Date().toISOString().split("T")[0]}.csv`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showToast("✅ Exported to Excel", "success");
+    showToast("✅ Exported","success");
   };
 
-  // ── FILTER ──────────────────────────────────────────────────────────────────
+  // ── IMPORT ──────────────────────────────────────────────────────────────────
+  const parseImportFile = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const text = ev.target.result;
+      const lines = text.split(/\r?\n/).filter(l => l.trim());
+      if (lines.length < 2) { showToast("⚠️ Empty file","info"); return; }
+
+      const delim = lines[0].includes(";") ? ";" : ",";
+      const parseRow = (line) => {
+        const result = []; let cur = "", inQ = false;
+        for (const ch of line) {
+          if (ch==='"'){inQ=!inQ;continue;}
+          if (ch===delim&&!inQ){result.push(cur.trim());cur="";continue;}
+          cur+=ch;
+        }
+        result.push(cur.trim());
+        return result;
+      };
+
+      const rawHeaders = parseRow(lines[0]);
+      const h = rawHeaders.map(x => x.toLowerCase().replace(/\s+/g,"_").replace(/['"]/g,"").trim());
+
+      // Map columns — matches YOUR exact Excel format
+      const colMap = {
+        first_name:   ["name","first_name","firstname","first","given_name","prenom","b"],
+        last_name:    ["last_name","last","surname","lastname","family_name","nom","c"],
+        state:        ["state","country","location","d"],
+        phone:        ["number","phone","tel","mobile","telephone","e","phone_number"],
+        email:        ["email","e_mail","mail","f"],
+        status:       ["status","statut","stage","g"],
+        deposit:      ["deposit","deposited","invested","amount","h"],
+        balance:      ["balance","total","i"],
+        security_code:["code","security_code","security","antiphishing","j"],
+        agent:        ["agent","rep"],
+        notes:        ["notes","comments"],
+      };
+
+      const colIdx = {};
+      Object.keys(colMap).forEach(field => {
+        const variants = colMap[field];
+        colIdx[field] = variants.reduce((found, v) => {
+          if (found !== -1) return found;
+          const idx = h.findIndex(hh => hh === v || hh.includes(v) || v.includes(hh));
+          return idx;
+        }, -1);
+      });
+
+      const validStatuses = ["New R","New","Call Again","VM","NA","In The Money"];
+
+      const rows = lines.slice(1).map((line, i) => {
+        const vals = parseRow(line);
+        const get = (f) => colIdx[f]>=0 ? (vals[colIdx[f]]||"").replace(/^"|"$/g,"").trim() : "";
+        const rawStatus = get("status");
+        const status = validStatuses.find(s => s.toLowerCase()===rawStatus.toLowerCase()) || "New R";
+        const fn = get("first_name"), ln = get("last_name");
+        return {
+          _rowNum: i+2, _valid: !!(fn||ln),
+          first_name: fn, last_name: ln,
+          state: get("state"), phone: get("phone"), email: get("email"),
+          status,
+          deposit: parseFloat(get("deposit").replace(/[$,]/g,""))||0,
+          balance: parseFloat(get("balance").replace(/[$,]/g,""))||0,
+          security_code: get("security_code") || genCode(),
+          agent: get("agent"), notes: get("notes"),
+        };
+      }).filter(r => r._valid);
+
+      if (!rows.length) { showToast("⚠️ No valid rows found","info"); return; }
+      setImportRows(rows);
+      setShowImport(true);
+    };
+    reader.readAsText(file, "UTF-8");
+    e.target.value = "";
+  };
+
+  const confirmImport = async () => {
+    setImporting(true);
+    const now = new Date().toISOString();
+    let ok=0, fail=0;
+    for (const row of importRows) {
+      try {
+        await supabase.from("vx_crm").insert({
+          id:`CRM${Date.now()}_${Math.random().toString(36).slice(2,5)}`,
+          first_name:row.first_name, last_name:row.last_name,
+          state:row.state, phone:row.phone, email:row.email,
+          status:row.status,
+          deposit:row.deposit, amount_deposited:row.deposit,
+          balance:row.balance,
+          security_code:row.security_code,
+          agent:row.agent, notes:row.notes,
+          created_at:now, updated_at:now,
+        });
+        ok++;
+      } catch(e){ fail++; }
+    }
+    await loadClients();
+    setImporting(false); setShowImport(false); setImportRows([]);
+    showToast(`✅ Imported ${ok} clients${fail>0?` (${fail} failed)`:""}`, "success");
+  };
+
   const filtered = clients.filter(c => {
     const q = search.toLowerCase();
-    const matchSearch = !q || [c.first_name,c.last_name,c.phone,c.email,c.agent].some(v=>(v||"").toLowerCase().includes(q));
-    const matchStatus = filterStat === "All" || c.status === filterStat;
+    const matchSearch = !q || [c.first_name,c.last_name,c.phone,c.email,c.state,c.agent].some(v=>(v||"").toLowerCase().includes(q));
+    const matchStatus = filterStat==="All" || c.status===filterStat;
     return matchSearch && matchStatus;
   });
 
-  // ── STATS ───────────────────────────────────────────────────────────────────
-  const totalDeposited = clients.reduce((a,c) => a+(c.amount_deposited||0), 0);
-  const inTheMoney     = clients.filter(c=>c.status==="In The Money").length;
-  const statusCounts   = Object.fromEntries(CRM_STATUSES.map(s => [s.id, clients.filter(c=>c.status===s.id).length]));
+  const totalDeposited = filtered.reduce((a,c)=>a+(c.deposit||c.amount_deposited||0),0);
+  const totalBalance   = filtered.reduce((a,c)=>a+(c.balance||0),0);
+  const statusCounts   = Object.fromEntries(["New R","Call Again","VM","NA","In The Money"].map(s=>[s,clients.filter(c=>c.status===s).length]));
 
   return (
     <div>
       {/* Header */}
-      <div style={{ ...S.rowsb, marginBottom:22, flexWrap:"wrap", gap:12 }}>
+      <div style={{ ...S.rowsb, marginBottom:18, flexWrap:"wrap", gap:12 }}>
         <div>
           <div style={S.hd}>CRM — Client Manager</div>
-          <div style={S.sub}>Track leads, clients and deposits</div>
+          <div style={S.sub}>{clients.length} clients · Total deposited: <strong style={{ color:"#ffc800" }}>${fmt(clients.reduce((a,c)=>a+(c.deposit||c.amount_deposited||0),0))}</strong></div>
         </div>
-        <div style={S.row}>
-          <button style={{ ...btn("ghost"), padding:"9px 18px", fontSize:13 }} onClick={exportCSV}>📊 Export Excel</button>
-          <button style={{ ...btn("primary"), padding:"9px 18px", fontSize:13 }} onClick={() => { resetForm(); setShowForm(true); }}>+ Add Client</button>
+        <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+          <input id="crm-import" type="file" accept=".csv,.txt" style={{ display:"none" }} onChange={parseImportFile}/>
+          <button style={{ ...btn("ghost"), padding:"9px 16px", fontSize:13 }} onClick={()=>document.getElementById("crm-import").click()}>📥 Import CSV</button>
+          <button style={{ ...btn("ghost"), padding:"9px 16px", fontSize:13 }} onClick={exportCSV}>📊 Export CSV</button>
+          <button style={{ ...btn("primary"), padding:"9px 18px", fontSize:13 }} onClick={()=>{ resetForm(); setShowForm(true); }}>+ Add Client</button>
         </div>
       </div>
 
-      {/* Stats */}
-      <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(140px,1fr))", gap:12, marginBottom:20 }}>
-        {[
-          { l:"Total Clients",   v:clients.length,             c:"#ffc800" },
-          { l:"In The Money",    v:inTheMoney,                 c:C.green   },
-          { l:"Total Deposited", v:"$"+fmt(totalDeposited),    c:"#ffc800" },
-          { l:"New Leads",       v:statusCounts["New"]||0,     c:"#60a5fa" },
-          { l:"Call Again",      v:statusCounts["Call Again"]||0, c:"#a78bfa" },
-          { l:"NA / VM",         v:(statusCounts["NA"]||0)+(statusCounts["VM"]||0), c:C.red },
-        ].map((s,i) => (
-          <div key={i} style={{ ...S.scard, textAlign:"center" }}>
-            <div style={{ fontSize:10, color:C.text3, textTransform:"uppercase", letterSpacing:".06em", marginBottom:6 }}>{s.l}</div>
-            <div style={{ fontSize:20, fontWeight:800, color:s.c }}>{s.v}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Status pipeline */}
-      <div style={{ display:"flex", gap:6, marginBottom:18, flexWrap:"wrap" }}>
-        <button style={{ ...btn(filterStat==="All"?"primary":"ghost"), padding:"6px 14px", fontSize:12 }} onClick={() => setFilterStat("All")}>All ({clients.length})</button>
+      {/* Status filter tabs */}
+      <div style={{ display:"flex", gap:6, marginBottom:14, flexWrap:"wrap" }}>
+        <button style={{ ...btn(filterStat==="All"?"primary":"ghost"), padding:"6px 14px", fontSize:12 }} onClick={()=>setFilterStat("All")}>All ({clients.length})</button>
         {CRM_STATUSES.map(s => (
-          <button key={s.id} style={{ ...btn("ghost"), padding:"6px 14px", fontSize:12, borderColor: filterStat===s.id?s.color:"rgba(255,255,255,.08)", color: filterStat===s.id?s.color:C.text2, background: filterStat===s.id?s.bg:"transparent" }}
-            onClick={() => setFilterStat(s.id)}>
-            {s.label} ({statusCounts[s.id]||0})
+          <button key={s.id} style={{ padding:"6px 14px", borderRadius:8, border:`1px solid ${filterStat===s.id?s.color:"rgba(255,255,255,.08)"}`, background:filterStat===s.id?s.bg:"transparent", color:filterStat===s.id?s.color:C.text3, fontSize:12, fontWeight:600, cursor:"pointer", fontFamily:"inherit" }}
+            onClick={()=>setFilterStat(s.id)}>
+            {s.id==="In The Money"?"💰 In The Money":s.id} ({statusCounts[s.id]||0})
           </button>
         ))}
       </div>
 
       {/* Search */}
-      <div style={{ marginBottom:16 }}>
-        <input style={{ ...S.inp, maxWidth:360 }} placeholder="🔍 Search name, phone, email, agent…" value={search} onChange={e=>setSearch(e.target.value)}/>
-      </div>
+      <input style={{ ...S.inp, maxWidth:340, marginBottom:16 }} placeholder="🔍 Search name, phone, email…" value={search} onChange={e=>setSearch(e.target.value)}/>
 
-      {/* Add / Edit Form */}
+      {/* Add/Edit Form */}
       {showForm && (
-        <div style={{ ...S.card, marginBottom:22, borderColor:editClient?"rgba(255,200,0,.5)":"rgba(255,200,0,.25)", background:editClient?"linear-gradient(160deg,rgba(255,200,0,.07),rgba(0,0,0,0))":"linear-gradient(160deg,rgba(255,200,0,.04),rgba(0,0,0,0))" }}>
-          <div style={{ ...S.rowsb, marginBottom:18 }}>
-            <div style={{ fontSize:14, fontWeight:700, color:"#ffc800" }}>{editClient ? "✏️ Edit Client" : "👤 Add New Client"}</div>
-            <button style={{ ...btn("ghost"), padding:"5px 14px", fontSize:12 }} onClick={resetForm}>Cancel</button>
+        <div style={{ ...S.card, marginBottom:20, borderColor:editClient?"rgba(255,200,0,.5)":"rgba(255,200,0,.2)" }}>
+          <div style={{ ...S.rowsb, marginBottom:16 }}>
+            <span style={{ fontSize:14, fontWeight:700, color:"#ffc800" }}>{editClient?"✏️ Edit Client":"👤 New Client"}</span>
+            <button style={{ ...btn("ghost"), padding:"5px 12px", fontSize:12 }} onClick={resetForm}>Cancel</button>
           </div>
-          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(180px,1fr))", gap:14, marginBottom:14 }}>
-            <div><label style={S.label}>First Name *</label><input style={S.inp} value={form.first_name} onChange={e=>setForm(f=>({...f,first_name:e.target.value}))} placeholder="John"/></div>
-            <div><label style={S.label}>Last Name *</label><input style={S.inp} value={form.last_name} onChange={e=>setForm(f=>({...f,last_name:e.target.value}))} placeholder="Smith"/></div>
-            <div><label style={S.label}>Phone</label><input style={S.inp} value={form.phone} onChange={e=>setForm(f=>({...f,phone:e.target.value}))} placeholder="+44 7700 900000"/></div>
-            <div><label style={S.label}>Email</label><input style={S.inp} type="email" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))} placeholder="john@email.com"/></div>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))", gap:12, marginBottom:12 }}>
+            <div><label style={S.label}>First Name</label><input style={S.inp} value={form.first_name} onChange={e=>setForm(f=>({...f,first_name:e.target.value}))} placeholder="Christine"/></div>
+            <div><label style={S.label}>Last Name</label><input style={S.inp} value={form.last_name} onChange={e=>setForm(f=>({...f,last_name:e.target.value}))} placeholder="Baker"/></div>
+            <div><label style={S.label}>State / Country</label><input style={S.inp} value={form.state} onChange={e=>setForm(f=>({...f,state:e.target.value}))} placeholder="United Kingdom"/></div>
+            <div><label style={S.label}>Phone Number</label><input style={S.inp} value={form.phone} onChange={e=>setForm(f=>({...f,phone:e.target.value}))} placeholder="447974759755"/></div>
+            <div><label style={S.label}>Email</label><input style={S.inp} type="email" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))} placeholder="email@example.com"/></div>
             <div>
               <label style={S.label}>Status</label>
               <select style={S.sel} value={form.status} onChange={e=>setForm(f=>({...f,status:e.target.value}))}>
-                {CRM_STATUSES.map(s => <option key={s.id} value={s.id}>{s.label}</option>)}
+                {CRM_STATUSES.map(s=><option key={s.id} value={s.id}>{s.id}</option>)}
               </select>
             </div>
-            <div><label style={S.label}>Amount Deposited ($)</label><input style={S.inp} type="number" value={form.amount_deposited} onChange={e=>setForm(f=>({...f,amount_deposited:e.target.value}))} placeholder="0"/></div>
+            <div><label style={S.label}>Deposit ($)</label><input style={S.inp} type="number" value={form.deposit} onChange={e=>setForm(f=>({...f,deposit:e.target.value}))} placeholder="0.00"/></div>
+            <div><label style={S.label}>Balance ($)</label><input style={S.inp} type="number" value={form.balance} onChange={e=>setForm(f=>({...f,balance:e.target.value}))} placeholder="0.00"/></div>
             <div>
               <label style={S.label}>Security Code</label>
               <div style={{ display:"flex", gap:6 }}>
-                <input style={S.inp} value={form.security_code} onChange={e=>setForm(f=>({...f,security_code:e.target.value}))} placeholder="Auto-generated"/>
-                <button style={{ ...btn("ghost"), padding:"0 12px", flexShrink:0, fontSize:16 }} title="Generate" onClick={() => setForm(f=>({...f,security_code:genSecurityCode()}))}>🔄</button>
+                <input style={S.inp} value={form.security_code} onChange={e=>setForm(f=>({...f,security_code:e.target.value}))} placeholder="Auto"/>
+                <button style={{ ...btn("ghost"), padding:"0 10px", fontSize:16, flexShrink:0 }} onClick={()=>setForm(f=>({...f,security_code:genCode()}))}>🔄</button>
               </div>
             </div>
             <div><label style={S.label}>Agent</label><input style={S.inp} value={form.agent} onChange={e=>setForm(f=>({...f,agent:e.target.value}))} placeholder="Agent name"/></div>
           </div>
-          <div style={{ marginBottom:16 }}>
-            <label style={S.label}>Notes</label>
-            <textarea style={{ ...S.inp, minHeight:60, resize:"vertical" }} value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} placeholder="Call notes, follow-up reminders…"/>
-          </div>
+          <div style={{ marginBottom:14 }}><label style={S.label}>Notes</label><textarea style={{ ...S.inp, minHeight:56, resize:"vertical" }} value={form.notes} onChange={e=>setForm(f=>({...f,notes:e.target.value}))} placeholder="Call notes…"/></div>
           <div style={S.row}>
-            <button style={{ ...btn("primary"), padding:"11px 28px", fontSize:14 }} onClick={saveClient}>{editClient?"💾 Save Changes":"+ Add Client"}</button>
-            <button style={{ ...btn("ghost"), padding:"11px 18px" }} onClick={resetForm}>Cancel</button>
+            <button style={{ ...btn("primary"), padding:"10px 26px", fontSize:14 }} onClick={saveClient}>{editClient?"💾 Save Changes":"+ Add Client"}</button>
+            <button style={{ ...btn("ghost"), padding:"10px 16px" }} onClick={resetForm}>Cancel</button>
           </div>
         </div>
       )}
 
-      {/* Client Detail Panel */}
-      {showDetail && (
-        <div style={{ ...S.card, marginBottom:22, borderColor:"rgba(255,200,0,.3)", position:"relative" }}>
-          <button style={{ position:"absolute", top:14, right:14, background:"none", border:"none", color:C.text3, cursor:"pointer", fontSize:20, lineHeight:1 }} onClick={() => setShowDetail(null)}>×</button>
-          <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:20 }}>
-            <div>
-              <div style={{ fontSize:18, fontWeight:800, color:C.text, marginBottom:4 }}>{showDetail.first_name} {showDetail.last_name}</div>
-              <StatusBadge status={showDetail.status}/>
-              <div style={{ marginTop:14, display:"grid", gap:8 }}>
-                {[
-                  ["📞 Phone",   showDetail.phone],
-                  ["📧 Email",   showDetail.email],
-                  ["👤 Agent",   showDetail.agent],
-                  ["💰 Deposited", showDetail.amount_deposited ? "$"+fmt(showDetail.amount_deposited) : "—"],
-                  ["📅 Added",   showDetail.created_at?.split("T")[0]],
-                ].map(([l,v]) => v ? (
-                  <div key={l} style={{ display:"flex", gap:10, fontSize:13 }}>
-                    <span style={{ color:C.text3, minWidth:100 }}>{l}</span>
-                    <span style={{ color:C.text, fontWeight:500 }}>{v}</span>
-                  </div>
-                ) : null)}
-              </div>
+      {/* Import Preview Modal */}
+      {showImport && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.88)", display:"flex", alignItems:"center", justifyContent:"center", zIndex:300, backdropFilter:"blur(8px)" }}>
+          <div style={{ background:"#161616", border:"1px solid rgba(255,200,0,.3)", borderRadius:20, padding:28, width:"min(900px,96vw)", maxHeight:"88vh", display:"flex", flexDirection:"column" }}>
+            <div style={{ ...S.rowsb, marginBottom:14 }}>
+              <div><div style={{ fontSize:17, fontWeight:700, color:C.text }}>📥 Import Preview — {importRows.length} clients</div><div style={{ fontSize:12, color:C.text3, marginTop:3 }}>Review before importing to Supabase</div></div>
+              <button style={{ background:"none", border:"none", color:C.text3, cursor:"pointer", fontSize:22 }} onClick={()=>{setShowImport(false);setImportRows([]);}}>×</button>
             </div>
-            <div>
-              {/* Security code - anti-phishing */}
-              <div style={{ background:"rgba(255,200,0,.08)", border:"1.5px solid rgba(255,200,0,.35)", borderRadius:12, padding:16, marginBottom:14 }}>
-                <div style={{ fontSize:11, color:C.text3, textTransform:"uppercase", letterSpacing:".08em", marginBottom:6 }}>🔐 Anti-Phishing Security Code</div>
-                <div style={{ fontSize:24, fontWeight:900, color:"#ffc800", fontFamily:"monospace", letterSpacing:2 }}>{showDetail.security_code||"—"}</div>
-                <div style={{ fontSize:11, color:C.text3, marginTop:6, lineHeight:1.6 }}>Read this code to the client to verify it's really VaultX calling. Client should confirm it matches their code.</div>
-                <button style={{ ...btn("ghost"), padding:"5px 12px", fontSize:11, marginTop:8 }} onClick={() => { navigator.clipboard?.writeText(showDetail.security_code||""); showToast("Code copied!","success"); }}>📋 Copy</button>
-              </div>
-              {/* Change status */}
-              <div>
-                <div style={{ fontSize:11, color:C.text3, textTransform:"uppercase", letterSpacing:".06em", marginBottom:8 }}>Update Status</div>
-                <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-                  {CRM_STATUSES.map(s => (
-                    <button key={s.id}
-                      style={{ padding:"6px 12px", borderRadius:20, border:`1px solid ${s.color}50`, background:showDetail.status===s.id?s.bg:"transparent", color:showDetail.status===s.id?s.color:C.text3, fontSize:11, fontWeight:600, cursor:"pointer", fontFamily:"inherit", transition:"all .15s" }}
-                      onClick={() => { updateStatus(showDetail.id, s.id); setShowDetail(p=>({...p,status:s.id})); }}>
-                      {s.label}
-                    </button>
+            <div style={{ background:"rgba(255,200,0,.06)", border:"1px solid rgba(255,200,0,.18)", borderRadius:8, padding:"9px 14px", marginBottom:14, fontSize:12, color:C.text2 }}>
+              ✅ Columns auto-detected. Missing security codes are auto-generated. Dollar signs and commas in amounts are handled automatically.
+            </div>
+            <div style={{ overflowY:"auto", flex:1, marginBottom:14 }}>
+              <table style={{ ...S.tbl, fontSize:12 }}>
+                <thead><tr>
+                  {["#","NAME","LAST NAME","STATE","NUMBER","EMAIL","STATUS","DEPOSIT","BALANCE","CODE"].map(h=>(
+                    <th key={h} style={{ ...S.th, fontSize:10, background:"rgba(255,200,0,.08)", color:"#ffc800" }}>{h}</th>
                   ))}
-                </div>
-              </div>
-              {showDetail.notes && (
-                <div style={{ marginTop:14 }}>
-                  <div style={{ fontSize:11, color:C.text3, textTransform:"uppercase", letterSpacing:".06em", marginBottom:6 }}>Notes</div>
-                  <div style={{ fontSize:13, color:C.text2, lineHeight:1.7, background:"rgba(255,255,255,.03)", borderRadius:8, padding:"10px 14px", border:"1px solid rgba(255,255,255,.05)" }}>{showDetail.notes}</div>
-                </div>
-              )}
+                </tr></thead>
+                <tbody>
+                  {importRows.slice(0,100).map((r,i)=>(
+                    <tr key={i} style={{ background:i%2===0?"transparent":"rgba(255,255,255,.015)" }}>
+                      <td style={{ ...S.td, color:C.text3, fontSize:11 }}>{r._rowNum}</td>
+                      <td style={{ ...S.td, fontWeight:700, color:C.text }}>{r.first_name||"—"}</td>
+                      <td style={{ ...S.td, color:C.text }}>{r.last_name||"—"}</td>
+                      <td style={{ ...S.td, fontSize:11, color:C.text2 }}>{r.state||"—"}</td>
+                      <td style={{ ...S.td, fontFamily:"monospace", fontSize:11 }}>{r.phone||"—"}</td>
+                      <td style={{ ...S.td, fontSize:11 }}>{r.email||"—"}</td>
+                      <td style={S.td}><span style={{ fontSize:11, fontWeight:700, color:CRM_STATUSES.find(s=>s.id===r.status)?.color||"#aaa" }}>{r.status}</span></td>
+                      <td style={{ ...S.td, fontFamily:"monospace", color:r.deposit>0?"#ffc800":C.text3, fontWeight:700 }}>{r.deposit>0?"$"+fmt(r.deposit):"—"}</td>
+                      <td style={{ ...S.td, fontFamily:"monospace", color:r.balance>0?C.green:C.text3 }}>{r.balance>0?"$"+fmt(r.balance):"—"}</td>
+                      <td style={{ ...S.td, fontFamily:"monospace", color:"#ffc800", fontSize:11, fontWeight:700 }}>{r.security_code}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {importRows.length>100 && <div style={{ textAlign:"center", padding:10, color:C.text3, fontSize:12 }}>...and {importRows.length-100} more (all will be imported)</div>}
             </div>
-          </div>
-          <div style={{ display:"flex", gap:10, marginTop:16, paddingTop:14, borderTop:`1px solid ${C.border2}` }}>
-            <button style={{ ...btn("ghost"), padding:"8px 18px", fontSize:13 }} onClick={() => startEdit(showDetail)}>✏️ Edit</button>
-            <button style={{ ...btn("danger"), padding:"8px 18px", fontSize:13 }} onClick={() => deleteClient(showDetail.id)}>🗑 Delete</button>
+            <div style={{ ...S.rowsb, flexWrap:"wrap", gap:10 }}>
+              <span style={{ fontSize:13, color:C.text3 }}>Ready to import <strong style={{ color:"#ffc800" }}>{importRows.length}</strong> clients</span>
+              <div style={S.row}>
+                <button style={{ ...btn("ghost"), padding:"10px 20px" }} onClick={()=>{setShowImport(false);setImportRows([]);}}>Cancel</button>
+                <button style={{ ...btn("success"), padding:"10px 28px", fontSize:14, opacity:importing?.7:1 }} onClick={confirmImport} disabled={importing}>
+                  {importing?`⏳ Importing… ${importRows.length}`:`✅ Import ${importRows.length} Clients`}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Table */}
-      <div style={{ ...S.card, padding:0, overflow:"hidden" }}>
-        {loading ? (
-          <div style={{ textAlign:"center", padding:"40px", color:C.text3 }}>Loading CRM…</div>
-        ) : filtered.length === 0 ? (
-          <EmptyState icon="👥" text={search||filterStat!=="All" ? "No clients match your filter." : "No clients yet. Add your first one above."}/>
-        ) : (
-          <div style={{ overflowX:"auto", WebkitOverflowScrolling:"touch" }}>
-            <table style={S.tbl}>
-              <thead>
-                <tr>{["Client","Phone","Email","Status","Deposited","Security Code","Agent","Added","Actions"].map(h=><th key={h} style={S.th}>{h}</th>)}</tr>
-              </thead>
-              <tbody>
-                {filtered.map(c => (
-                  <tr key={c.id} style={{ cursor:"pointer" }}>
-                    <td style={S.td} onClick={() => setShowDetail(c)}>
-                      <div style={{ fontWeight:700, color:C.text }}>{c.first_name} {c.last_name}</div>
-                    </td>
-                    <td style={{ ...S.td, fontFamily:"monospace" }}>{c.phone||"—"}</td>
+      {/* Table — Excel style */}
+      <div style={{ ...S.card, padding:0, overflow:"hidden", borderColor:"rgba(255,200,0,.18)" }}>
+        {/* Column headers — gold background like Excel */}
+        <div style={{ overflowX:"auto", WebkitOverflowScrolling:"touch" }}>
+          <table style={{ ...S.tbl, minWidth:1000 }}>
+            <thead>
+              <tr>
+                {["NAME","LAST NAME","STATE","NUMBER","EMAIL","STATUS","DEPOSIT","BALANCE","CODE","ACTIONS"].map(h=>(
+                  <th key={h} style={{ ...S.th, background:"rgba(255,200,0,.12)", color:"#ffc800", fontSize:11, fontWeight:700, letterSpacing:".08em", borderBottom:"2px solid rgba(255,200,0,.3)" }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan={10} style={{ ...S.td, textAlign:"center", padding:40, color:C.text3 }}>Loading CRM…</td></tr>
+              ) : filtered.length===0 ? (
+                <tr><td colSpan={10} style={{ ...S.td, textAlign:"center", padding:40, color:C.text3 }}>
+                  {search||filterStat!=="All" ? "No clients match your filter." : "No clients yet — add one or import from CSV."}
+                </td></tr>
+              ) : filtered.map((c,i)=>{
+                const isItm = c.status==="In The Money";
+                const rowBg = isItm ? "rgba(255,200,0,.06)" : i%2===0?"transparent":"rgba(255,255,255,.015)";
+                return (
+                  <tr key={c.id} style={{ background:rowBg }}>
+                    <td style={{ ...S.td, fontWeight:700, color:isItm?"#ffc800":C.text }}>{c.first_name||"—"}</td>
+                    <td style={{ ...S.td, color:C.text }}>{c.last_name||"—"}</td>
+                    <td style={{ ...S.td, fontSize:12, color:C.text2 }}>{c.state||"—"}</td>
+                    <td style={{ ...S.td, fontFamily:"monospace", fontSize:12 }}>{c.phone||"—"}</td>
                     <td style={{ ...S.td, fontSize:12 }}>{c.email||"—"}</td>
                     <td style={S.td}>
                       <select
-                        style={{ background:"transparent", border:"none", cursor:"pointer", fontFamily:"inherit", fontSize:11, color:"inherit", outline:"none" }}
-                        value={c.status} onChange={e=>{ e.stopPropagation(); updateStatus(c.id, e.target.value); }}>
-                        {CRM_STATUSES.map(s=><option key={s.id} value={s.id}>{s.label}</option>)}
+                        value={c.status}
+                        onChange={e=>updateStatus(c.id,e.target.value)}
+                        style={{ background:"transparent", border:"none", cursor:"pointer", fontFamily:"inherit", fontSize:11, fontWeight:700, color:CRM_STATUSES.find(s=>s.id===c.status)?.color||C.text2, outline:"none", width:"100%" }}>
+                        {CRM_STATUSES.map(s=><option key={s.id} value={s.id} style={{ background:"#111",color:"#fff" }}>{s.id}</option>)}
                       </select>
-                      <StatusBadge status={c.status}/>
                     </td>
-                    <td style={{ ...S.td, fontFamily:"monospace", color:c.amount_deposited>0?"#ffc800":C.text3, fontWeight:700 }}>{c.amount_deposited>0?"$"+fmt(c.amount_deposited):"—"}</td>
+                    <td style={{ ...S.td, fontFamily:"monospace", fontWeight:700, color:(c.deposit||c.amount_deposited)>0?"#ffc800":C.text3 }}>
+                      {(c.deposit||c.amount_deposited)>0 ? "$"+fmt(c.deposit||c.amount_deposited) : "—"}
+                    </td>
+                    <td style={{ ...S.td, fontFamily:"monospace", color:(c.balance)>0?C.green:C.text3 }}>
+                      {c.balance>0 ? "$"+fmt(c.balance) : "—"}
+                    </td>
                     <td style={{ ...S.td }}>
-                      <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                      <div style={{ display:"flex", alignItems:"center", gap:5 }}>
                         <span style={{ fontFamily:"monospace", fontSize:12, color:"#ffc800", fontWeight:700, letterSpacing:1 }}>{c.security_code||"—"}</span>
-                        {c.security_code && <button style={{ background:"none", border:"none", cursor:"pointer", color:C.text3, fontSize:12, padding:"2px 4px" }} onClick={e=>{e.stopPropagation();navigator.clipboard?.writeText(c.security_code);showToast("Code copied!","success");}}>📋</button>}
+                        {c.security_code && (
+                          <button style={{ background:"none", border:"none", cursor:"pointer", color:C.text3, fontSize:11, padding:"1px 4px" }}
+                            onClick={()=>{navigator.clipboard?.writeText(c.security_code);showToast("Code copied!","success");}}>📋</button>
+                        )}
                       </div>
                     </td>
-                    <td style={{ ...S.td, fontSize:12 }}>{c.agent||"—"}</td>
-                    <td style={{ ...S.td, fontSize:11, color:C.text3 }}>{c.created_at?.split("T")[0]||"—"}</td>
                     <td style={S.td}>
-                      <div style={S.row}>
-                        <button style={{ ...btn("ghost"), padding:"4px 10px", fontSize:12 }} onClick={e=>{e.stopPropagation();setShowDetail(c);}}>View</button>
-                        <button style={{ ...btn("ghost"), padding:"4px 10px", fontSize:12 }} onClick={e=>{e.stopPropagation();startEdit(c);}}>✏️</button>
-                        <button style={{ ...btn("danger"), padding:"4px 10px", fontSize:12 }} onClick={e=>{e.stopPropagation();deleteClient(c.id);}}>🗑</button>
+                      <div style={{ display:"flex", gap:6 }}>
+                        <button style={{ ...btn("ghost"), padding:"4px 10px", fontSize:11 }} onClick={()=>startEdit(c)}>✏️ Edit</button>
+                        <button style={{ ...btn("danger"), padding:"4px 10px", fontSize:11 }} onClick={()=>deleteClient(c.id)}>🗑</button>
                       </div>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-        {filtered.length > 0 && (
-          <div style={{ padding:"12px 20px", borderTop:`1px solid ${C.border2}`, fontSize:12, color:C.text3, display:"flex", justifyContent:"space-between" }}>
-            <span>Showing {filtered.length} of {clients.length} clients</span>
-            <span>Total deposited (filtered): <strong style={{ color:"#ffc800" }}>${fmt(filtered.reduce((a,c)=>a+(c.amount_deposited||0),0))}</strong></span>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Footer totals */}
+        {filtered.length>0 && (
+          <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 20px", background:"rgba(255,200,0,.06)", borderTop:"1px solid rgba(255,200,0,.15)", flexWrap:"wrap", gap:10 }}>
+            <span style={{ fontSize:12, color:C.text3 }}>{filtered.length} of {clients.length} clients shown</span>
+            <div style={{ display:"flex", gap:24 }}>
+              <span style={{ fontSize:12, color:C.text3 }}>Deposit: <strong style={{ color:"#ffc800", fontFamily:"monospace" }}>${fmt(totalDeposited)}</strong></span>
+              <span style={{ fontSize:12, color:C.text3 }}>Balance: <strong style={{ color:C.green, fontFamily:"monospace" }}>${fmt(totalBalance)}</strong></span>
+            </div>
           </div>
         )}
       </div>
