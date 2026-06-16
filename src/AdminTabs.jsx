@@ -821,6 +821,18 @@ export function AgentDepositBoard() {
   const [companyTag,    setCompanyTag]    = useState(() => localStorage.getItem("vx_board_tag")     || "");
   const [editingBrand,  setEditingBrand]  = useState(false);
 
+  // Load brand settings from Supabase when authed
+  useEffect(() => {
+    if (!authed || !supabase) return;
+    supabase.from("vx_board_settings").select("*").then(({ data }) => {
+      if (!data) return;
+      data.forEach(row => {
+        if (row.key === "company_name") { setCompanyName(row.value); localStorage.setItem("vx_board_company", row.value); }
+        if (row.key === "company_tag")  { setCompanyTag(row.value);  localStorage.setItem("vx_board_tag",  row.value); }
+      });
+    });
+  }, [authed, supabase]);
+
   // Load from Supabase when authed
   useEffect(() => {
     if (!authed || !supabase) return;
@@ -887,11 +899,16 @@ export function AgentDepositBoard() {
     setForm({ amount:"", date:new Date().toISOString().split("T")[0], method:"Crypto", agent:"", client:"", closer:"" });
   };
 
-  const saveBrand = () => {
+  const saveBrand = async () => {
     localStorage.setItem("vx_board_company", companyName);
-    localStorage.setItem("vx_board_tag", companyTag);
+    localStorage.setItem("vx_board_tag",     companyTag);
     setEditingBrand(false);
     showToast("✅ Brand saved!");
+    // Sync to Supabase
+    try {
+      await supabase.from("vx_board_settings").upsert({ key:"company_name", value:companyName });
+      await supabase.from("vx_board_settings").upsert({ key:"company_tag",  value:companyTag });
+    } catch(e) { console.warn("Brand sync failed", e); }
   };
 
   const removeDeposit = async (id) => {
@@ -1024,7 +1041,7 @@ export function AgentDepositBoard() {
           </div>
           {editId && <button style={{ ...btn("ghost"), padding:"5px 14px", fontSize:12 }} onClick={cancelEdit}>Cancel Edit</button>}
         </div>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(6,1fr)", gap:14, marginBottom:16 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(7,1fr)", gap:14, marginBottom:16 }}>
           <div>
             <label style={S.label}>Amount (USD)</label>
             <input style={S.inp} type="number" placeholder="e.g. 25000" value={form.amount} onChange={e=>setForm(f=>({...f,amount:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&addDeposit()} />
@@ -1051,6 +1068,10 @@ export function AgentDepositBoard() {
           <div>
             <label style={S.label}>Closer Name</label>
             <input style={S.inp} placeholder="e.g. Mike Ross" value={form.closer} onChange={e=>setForm(f=>({...f,closer:e.target.value}))} onKeyDown={e=>e.key==="Enter"&&addDeposit()} />
+          </div>
+          <div>
+            <label style={S.label}>Company Name</label>
+            <input style={{ ...S.inp, borderColor:"rgba(255,200,0,.35)" }} placeholder="e.g. VaultX Ltd" value={companyName} onChange={e=>{ setCompanyName(e.target.value); localStorage.setItem("vx_board_company",e.target.value); }} onBlur={async(e)=>{ try{ await supabase.from("vx_board_settings").upsert({key:"company_name",value:e.target.value}); }catch(err){} }} />
           </div>
         </div>
         <div style={S.row}>
