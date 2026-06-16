@@ -1387,224 +1387,100 @@ export function AdminCRM() {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Decode UTF-7 / LibreOffice encoded characters
-    const decodeUTF7 = (str) => str
-      .replace(/\+AEA-/g, '@')
-      .replace(/\+ACQ-/g, '$')
-      .replace(/\+ACI-/g, '"')
-      .replace(/\+AC0-/g, '-')
-      .replace(/\+AF8-/g, '_')
-      .replace(/\+ACY-/g, '&')
-      .replace(/\+APo-/g, "'")
-      .replace(/\+ADs-/g, ';')
-      .replace(/\+ADw-/g, '<')
-      .replace(/\+AD4-/g, '>')
-      .replace(/\+AFs-/g, '[')
-      .replace(/\+AF0-/g, ']')
-      .replace(/\+AHs-/g, '{')
-      .replace(/\+AH0-/g, '}')
-      .replace(/\+AFw-/g, '\\')
-      .replace(/\+AGA-/g, '`')
-      .replace(/\+ACM-/g, '#')
-      .replace(/\+ACU-/g, '%')
-      .replace(/\+ACo-/g, '*')
-      .replace(/\+[A-Z0-9]+-/g, '') // remove any remaining UTF-7 sequences
-      .replace(/\+ACQ-([\d,]+)\+ACI-/g, '$1') // $"1,234" -> 1234
-      .replace(/^\+ACI-\+ACQ-([\d,]+)\+ACI-$/, '$1'); // clean quoted amounts
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const raw = ev.target.result.replace(/^\uFEFF/, '');
 
-    const tryRead = (encoding) => {
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        let raw = ev.target.result;
-        raw = raw.replace(/^\uFEFF/, ''); // strip BOM
-
-        // Decode all UTF-7 sequences first
-        raw = decodeUTF7(raw);
-
-        const allLines = raw.split(/\r?\n/);
-
-        // ── DETECT FORMAT ──────────────────────────────────────────────────
-        // Check if it's the "wrapped" format (each value on its own row)
-        // Signature: header row has many commas, but data rows mostly have commas at end
-        const dataLines = allLines.filter(l => l.trim());
-        if (dataLines.length < 2) { showToast('⚠️ File appears empty', 'info'); return; }
-
-        const firstLine = dataLines[0];
-        const delim = (firstLine.match(/;/g)||[]).length > (firstLine.match(/,/g)||[]).length ? ';' : ',';
-
-        // Count columns in header
-        const headerCols = firstLine.split(delim).length;
-
-        // Check if most data rows have only 1-2 values (wrapped format)
-        const sampleRows = dataLines.slice(1, 20);
-        const avgCols = sampleRows.reduce((a,l) => a + l.split(delim).filter(v=>v.trim()).length, 0) / sampleRows.length;
-        const isWrapped = avgCols < 3 && headerCols > 5;
-
-        let rows = [];
-
-        if (isWrapped) {
-          // ── WRAPPED FORMAT: every N lines = one client ──────────────────
-          // Your file: CODE, NAME, LASTNAME, STATE, PHONE, EMAIL, STATUS, DEPOSIT, BALANCE, CODE (10 fields per client, each on own row)
-          // Skip header row, then group every 10 non-empty lines + blank separator
-          const headerRow = firstLine.split(delim).map(h => h.trim().replace(/^"|"$/g,''));
-          const FIELDS_PER_CLIENT = headerRow.length || 10;
-
-          // Collect all non-separator values
-          const values = [];
-          let inClient = false;
-          let clientVals = [];
-
-          for (let i = 1; i < allLines.length; i++) {
-            const line = allLines[i];
-            const parts = line.split(delim);
-            const val = (parts[0]||'').trim().replace(/^"|"$/g,'');
-            const isEmpty = parts.every(p => !p.trim());
-
-            if (isEmpty) {
-              if (clientVals.length > 0) {
-                // Check if we have enough for a client
-                if (clientVals.length >= 7) values.push([...clientVals]);
-                clientVals = [];
-              }
-              continue;
-            }
-
-            clientVals.push(val);
-
-            // When we've collected enough fields for one client
-            if (clientVals.length === FIELDS_PER_CLIENT) {
-              values.push([...clientVals]);
-              clientVals = [];
-            }
+      // Parse CSV properly handling quoted fields with embedded commas
+      const parseCSV = (text) => {
+        const rows = [];
+        let row = [], cur = '', inQ = false;
+        for (let i = 0; i < text.length; i++) {
+          const ch = text[i];
+          const next = text[i+1];
+          if (ch === '"') { inQ = !inQ; continue; }
+          if (ch === ',' && !inQ) { row.push(cur.trim()); cur = ''; continue; }
+          if ((ch === '\r' && next === '\n') || ch === '\n') {
+            if (!inQ) { row.push(cur.trim()); if (row.some(c=>c)) rows.push(row); row = []; cur = ''; if(ch==='\r') i++; continue; }
           }
-          if (clientVals.length >= 7) values.push(clientVals);
-
-          // Map: header tells us field order
-          // Your header: ,NAME,LAST NAME,STATE,NUMBER,EMAIL,STATUS,DEPOSIT,BALANCE,CODE
-          // So col 0 = junk/code, col 1 = name, col 2 = last, col 3 = state, col 4 = phone, col 5 = email, col 6 = status, col 7 = deposit, col 8 = balance, col 9 = code
-          const hMap = {};
-          headerRow.forEach((h, i) => {
-            const hh = h.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
-            hMap[hh] = i;
-          });
-
-          const getIdx = (...keys) => {
-            for (const k of keys) {
-              if (hMap[k] !== undefined) return hMap[k];
-            }
-            return -1;
-          };
-
-          const iName    = getIdx('name','first_name','firstname') || 1;
-          const iLast    = getIdx('last_name','lastname','surname') || 2;
-          const iState   = getIdx('state','country','location') || 3;
-          const iPhone   = getIdx('number','phone','tel','mobile') || 4;
-          const iEmail   = getIdx('email','mail') || 5;
-          const iStatus  = getIdx('status','statut') || 6;
-          const iDeposit = getIdx('deposit','deposited','amount') || 7;
-          const iBalance = getIdx('balance','total') || 8;
-          const iCode    = getIdx('code','security_code','security') || 9;
-
-          const cleanNum = v => parseFloat((v||'0').replace(/[^0-9.]/g,'')) || 0;
-
-          rows = values.map((vals, i) => {
-            const get = idx => (idx >= 0 && idx < vals.length) ? vals[idx] : '';
-            const fn = get(iName), ln = get(iLast);
-            if (!fn && !ln) return null;
-            const rawStatus = get(iStatus);
-            const validStatuses = ['New R','New','Call Again','VM','NA','In The Money'];
-            const status = validStatuses.find(s=>s.toLowerCase()===rawStatus.toLowerCase())||'New R';
-            return {
-              _rowNum: i+2,
-              first_name: fn, last_name: ln,
-              state: get(iState),
-              phone: get(iPhone),
-              email: get(iEmail),
-              status,
-              deposit: cleanNum(get(iDeposit)),
-              balance: cleanNum(get(iBalance)),
-              security_code: get(iCode) || genCode(),
-              agent: '', notes: '',
-            };
-          }).filter(Boolean);
-
-        } else {
-          // ── NORMAL FORMAT: one client per row ───────────────────────────
-          const parseRow = (line) => {
-            const result=[]; let cur='', inQ=false;
-            for (const ch of line) {
-              if(ch==='"'){inQ=!inQ;continue;}
-              if(ch===delim&&!inQ){result.push(cur.trim());cur='';continue;}
-              cur+=ch;
-            }
-            result.push(cur.trim());
-            return result.map(v=>v.replace(/^["\'\']|["\'\']$/g,'').trim());
-          };
-
-          const rawHeaders = parseRow(dataLines[0]);
-          const h = rawHeaders.map(x=>x.toLowerCase().replace(/[^a-z0-9_\s]/g,'').replace(/\s+/g,'_').trim());
-
-          const colMap = {
-            first_name:    ['name','first_name','firstname','first','given_name'],
-            last_name:     ['last_name','last','surname','lastname','family_name'],
-            state:         ['state','country','location'],
-            phone:         ['number','phone','tel','mobile','telephone'],
-            email:         ['email','e_mail','mail'],
-            status:        ['status','statut','stage'],
-            deposit:       ['deposit','deposited','invested','amount'],
-            balance:       ['balance','total'],
-            security_code: ['code','security_code','security'],
-            agent:         ['agent','rep'],
-            notes:         ['notes','comments'],
-          };
-
-          const colIdx = {};
-          Object.keys(colMap).forEach(field => {
-            colIdx[field] = -1;
-            for (const v of colMap[field]) {
-              const idx = h.findIndex(hh=>hh===v||hh.includes(v)||v.includes(hh));
-              if(idx!==-1){colIdx[field]=idx;break;}
-            }
-          });
-
-          const matched = Object.values(colIdx).filter(v=>v!==-1).length;
-          if (matched < 2) {
-            Object.assign(colIdx,{first_name:1,last_name:2,state:3,phone:4,email:5,status:6,deposit:7,balance:8,security_code:9});
-          }
-
-          const cleanNum = v => parseFloat((v||'0').replace(/[^0-9.]/g,'')) || 0;
-          const validStatuses = ['New R','New','Call Again','VM','NA','In The Money'];
-
-          rows = dataLines.slice(1).map((line,i) => {
-            if(!line.trim()) return null;
-            const vals = parseRow(line);
-            const get = f => colIdx[f]>=0&&colIdx[f]<vals.length?(vals[colIdx[f]]||''):'';
-            const fn=get('first_name'), ln=get('last_name');
-            if(!fn&&!ln) return null;
-            const rawSt=get('status');
-            const status=validStatuses.find(s=>s.toLowerCase()===rawSt.toLowerCase())||(rawSt.toLowerCase().includes('money')?'In The Money':'New R');
-            return {
-              _rowNum:i+2, first_name:fn, last_name:ln,
-              state:get('state'), phone:get('phone'), email:get('email'), status,
-              deposit:cleanNum(get('deposit')), balance:cleanNum(get('balance')),
-              security_code:get('security_code')||genCode(),
-              agent:get('agent'), notes:get('notes'),
-            };
-          }).filter(Boolean);
+          cur += ch;
         }
-
-        if(!rows.length){
-          showToast('⚠️ No valid rows found. Try: File → Save As → Text CSV → UTF-8 + comma delimiter', 'info');
-          return;
-        }
-        setImportRows(rows);
-        setShowImport(true);
+        if (cur || row.length) { row.push(cur.trim()); if (row.some(c=>c)) rows.push(row); }
+        return rows;
       };
-      reader.onerror = () => showToast('❌ Could not read file', 'info');
-      reader.readAsText(file, encoding);
+
+      const allRows = parseCSV(raw);
+      if (allRows.length < 2) { showToast('⚠️ Empty file', 'info'); return; }
+
+      const header = allRows[0]; // ['', 'NAME', 'LAST NAME', 'STATE', 'NUMBER', 'EMAIL', 'STATUS', 'DEPOSIT', 'BALANCE', 'CODE', 'AGENT']
+      const numCols = header.length;
+
+      const cleanNum = v => {
+        const n = parseFloat((v||'').replace(/[^0-9.-]/g,''));
+        return isNaN(n) ? 0 : n;
+      };
+
+      const validStatuses = ['New R','New','Call Again','Call again R','VM','NA','In The Money','No answer R','Try from others'];
+      const mapStatus = s => {
+        const found = validStatuses.find(v => v.toLowerCase() === (s||'').toLowerCase());
+        return found || 'New R';
+      };
+
+      const clients = [];
+
+      // SECTION 1: rows where most columns have data (normal format)
+      // Col 0 = junk, Col 1=NAME, 2=LAST, 3=STATE, 4=NUMBER, 5=EMAIL, 6=STATUS, 7=DEPOSIT, 8=BALANCE, 9=CODE, 10=AGENT
+      const normalRows = allRows.slice(1).filter(r => r.filter(c=>c.trim()).length >= 5);
+      normalRows.forEach(r => {
+        const fn = r[1]||'', ln = r[2]||'';
+        if (!fn && !ln) return;
+        clients.push({
+          first_name: fn, last_name: ln,
+          state:  r[3]||'', phone: r[4]||'', email: r[5]||'',
+          status: mapStatus(r[6]),
+          deposit: cleanNum(r[7]), balance: cleanNum(r[8]),
+          security_code: r[9]||genCode(), agent: r[10]||'', notes: '',
+        });
+      });
+
+      // SECTION 2: wrapped rows (each value in col 0, other cols empty)
+      // Pattern: CODE, NAME, LASTNAME, STATE, PHONE, EMAIL, STATUS, DEPOSIT, BALANCE, AGENT (repeating, separated by empty rows)
+      const wrappedRows = allRows.slice(1).filter(r => r.filter(c=>c.trim()).length < 5);
+      let vals = [];
+      const flushWrapped = () => {
+        if (vals.length < 6) { vals = []; return; }
+        // Field order in wrapped: CODE, FIRST_NAME, LAST_NAME, STATE, PHONE, EMAIL, STATUS, DEPOSIT, BALANCE, AGENT
+        const fn = vals[1]||'', ln = vals[2]||'';
+        if (!fn && !ln) { vals = []; return; }
+        clients.push({
+          security_code: vals[0]||genCode(),
+          first_name: fn, last_name: ln,
+          state: vals[3]||'', phone: vals[4]||'', email: vals[5]||'',
+          status: mapStatus(vals[6]),
+          deposit: cleanNum(vals[7]||'0'), balance: cleanNum(vals[8]||'0'),
+          agent: vals[9]||'', notes: '',
+        });
+        vals = [];
+      };
+
+      wrappedRows.forEach(r => {
+        const v = (r[0]||'').trim();
+        if (!v) { if (vals.length) flushWrapped(); }
+        else vals.push(v);
+      });
+      if (vals.length) flushWrapped();
+
+      if (!clients.length) {
+        showToast('⚠️ No valid clients found in file', 'info');
+        return;
+      }
+
+      setImportRows(clients);
+      setShowImport(true);
     };
 
-    tryRead('UTF-8');
+    reader.onerror = () => showToast('❌ Could not read file', 'info');
+    reader.readAsText(file, 'UTF-8');
     e.target.value = '';
   };
 
