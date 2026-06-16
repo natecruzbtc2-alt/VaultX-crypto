@@ -1386,77 +1386,108 @@ export function AdminCRM() {
   const parseImportFile = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      const text = ev.target.result;
-      const lines = text.split(/\r?\n/).filter(l => l.trim());
-      if (lines.length < 2) { showToast("⚠️ Empty file","info"); return; }
 
-      const delim = lines[0].includes(";") ? ";" : ",";
-      const parseRow = (line) => {
-        const result = []; let cur = "", inQ = false;
-        for (const ch of line) {
-          if (ch==='"'){inQ=!inQ;continue;}
-          if (ch===delim&&!inQ){result.push(cur.trim());cur="";continue;}
-          cur+=ch;
+    const tryEncodings = ["UTF-8","ISO-8859-1","Windows-1252"];
+    let encodingIdx = 0;
+
+    const tryRead = (encoding) => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        let text = ev.target.result;
+        // Strip BOM
+        text = text.replace(/^\uFEFF/, "");
+        // If too many garbled chars, try next encoding
+        const garbled = (text.match(/[\uFFFD]/g)||[]).length;
+        if (garbled > 30 && encodingIdx < tryEncodings.length-1) {
+          encodingIdx++; tryRead(tryEncodings[encodingIdx]); return;
         }
-        result.push(cur.trim());
-        return result;
-      };
+        // Clean non-printable chars
+        text = text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "");
 
-      const rawHeaders = parseRow(lines[0]);
-      const h = rawHeaders.map(x => x.toLowerCase().replace(/\s+/g,"_").replace(/['"]/g,"").trim());
+        const lines = text.split(/\r?\n/).filter(l => l.trim());
+        if (lines.length < 2) { showToast("⚠️ File appears empty","info"); return; }
 
-      // Map columns — matches YOUR exact Excel format
-      const colMap = {
-        first_name:   ["name","first_name","firstname","first","given_name","prenom","b"],
-        last_name:    ["last_name","last","surname","lastname","family_name","nom","c"],
-        state:        ["state","country","location","d"],
-        phone:        ["number","phone","tel","mobile","telephone","e","phone_number"],
-        email:        ["email","e_mail","mail","f"],
-        status:       ["status","statut","stage","g"],
-        deposit:      ["deposit","deposited","invested","amount","h"],
-        balance:      ["balance","total","i"],
-        security_code:["code","security_code","security","antiphishing","j"],
-        agent:        ["agent","rep"],
-        notes:        ["notes","comments"],
-      };
+        // Auto-detect delimiter
+        const fl = lines[0];
+        let delim = ",";
+        if ((fl.match(/;/g)||[]).length > (fl.match(/,/g)||[]).length) delim = ";";
+        else if ((fl.match(/\t/g)||[]).length > 2) delim = "\t";
 
-      const colIdx = {};
-      Object.keys(colMap).forEach(field => {
-        const variants = colMap[field];
-        colIdx[field] = variants.reduce((found, v) => {
-          if (found !== -1) return found;
-          const idx = h.findIndex(hh => hh === v || hh.includes(v) || v.includes(hh));
-          return idx;
-        }, -1);
-      });
-
-      const validStatuses = ["New R","New","Call Again","VM","NA","In The Money"];
-
-      const rows = lines.slice(1).map((line, i) => {
-        const vals = parseRow(line);
-        const get = (f) => colIdx[f]>=0 ? (vals[colIdx[f]]||"").replace(/^"|"$/g,"").trim() : "";
-        const rawStatus = get("status");
-        const status = validStatuses.find(s => s.toLowerCase()===rawStatus.toLowerCase()) || "New R";
-        const fn = get("first_name"), ln = get("last_name");
-        return {
-          _rowNum: i+2, _valid: !!(fn||ln),
-          first_name: fn, last_name: ln,
-          state: get("state"), phone: get("phone"), email: get("email"),
-          status,
-          deposit: parseFloat(get("deposit").replace(/[$,]/g,""))||0,
-          balance: parseFloat(get("balance").replace(/[$,]/g,""))||0,
-          security_code: get("security_code") || genCode(),
-          agent: get("agent"), notes: get("notes"),
+        const parseRow = (line) => {
+          const result=[]; let cur="", inQ=false;
+          for (let i=0;i<line.length;i++){
+            const ch=line[i];
+            if(ch==='"'){inQ=!inQ;continue;}
+            if(ch===delim&&!inQ){result.push(cur.trim());cur="";continue;}
+            cur+=ch;
+          }
+          result.push(cur.trim());
+          return result.map(v=>v.replace(/^["\'\']|["\'\']$/g,"").trim());
         };
-      }).filter(r => r._valid);
 
-      if (!rows.length) { showToast("⚠️ No valid rows found","info"); return; }
-      setImportRows(rows);
-      setShowImport(true);
+        const rawHeaders = parseRow(lines[0]);
+        const h = rawHeaders.map(x=>x.toLowerCase().replace(/[^a-z0-9_\s]/g,"").replace(/\s+/g,"_").trim());
+
+        const colMap = {
+          first_name:    ["name","first_name","firstname","first","given_name","prenom","vorname"],
+          last_name:     ["last_name","last","surname","lastname","family_name","nom","nachname"],
+          state:         ["state","country","location","land","pays"],
+          phone:         ["number","phone","tel","mobile","telephone","phone_number","nummer"],
+          email:         ["email","e_mail","mail","courriel"],
+          status:        ["status","statut","stage"],
+          deposit:       ["deposit","deposited","invested","amount","einzahlung","montant"],
+          balance:       ["balance","total","guthaben","solde"],
+          security_code: ["code","security_code","security","antiphishing"],
+          agent:         ["agent","rep","assigned_to"],
+          notes:         ["notes","note","comments"],
+        };
+
+        const colIdx = {};
+        Object.keys(colMap).forEach(field => {
+          colIdx[field] = -1;
+          for (const v of colMap[field]) {
+            const idx = h.findIndex(hh=>hh===v||hh.includes(v)||v.includes(hh));
+            if(idx!==-1){colIdx[field]=idx;break;}
+          }
+        });
+
+        // Fallback: positional mapping (NAME,LAST,STATE,NUMBER,EMAIL,STATUS,DEPOSIT,BALANCE,CODE)
+        const matched = Object.values(colIdx).filter(v=>v!==-1).length;
+        if (matched < 2) {
+          Object.assign(colIdx,{first_name:0,last_name:1,state:2,phone:3,email:4,status:5,deposit:6,balance:7,security_code:8});
+        }
+
+        const validStatuses = ["New R","New","Call Again","VM","NA","In The Money"];
+        const rows = lines.slice(1).map((line,i)=>{
+          if(!line.trim()) return null;
+          const vals = parseRow(line);
+          const get = f => colIdx[f]>=0&&colIdx[f]<vals.length?(vals[colIdx[f]]||""):"";
+          const fn=get("first_name"), ln=get("last_name");
+          if(!fn&&!ln) return null;
+          const rawSt=get("status");
+          const status=validStatuses.find(s=>s.toLowerCase()===rawSt.toLowerCase())
+            ||(rawSt.toLowerCase().includes("money")?"In The Money":"New R");
+          return {
+            _rowNum:i+2, first_name:fn, last_name:ln,
+            state:get("state"), phone:get("phone"), email:get("email"), status,
+            deposit:parseFloat((get("deposit")||"0").replace(/[$,\s]/g,""))||0,
+            balance:parseFloat((get("balance")||"0").replace(/[$,\s]/g,""))||0,
+            security_code:get("security_code")||genCode(),
+            agent:get("agent"), notes:get("notes"),
+          };
+        }).filter(Boolean);
+
+        if(!rows.length){showToast("⚠️ No valid rows found. In LibreOffice: File → Save As → Text CSV → Character set: UTF-8, Delimiter: comma","info");return;}
+        setImportRows(rows);
+        setShowImport(true);
+      };
+      reader.onerror = ()=>{
+        if(encodingIdx<tryEncodings.length-1){encodingIdx++;tryRead(tryEncodings[encodingIdx]);}
+        else showToast("❌ Could not read file","info");
+      };
+      reader.readAsText(file, encoding);
     };
-    reader.readAsText(file, "UTF-8");
+    tryRead(tryEncodings[0]);
     e.target.value = "";
   };
 
