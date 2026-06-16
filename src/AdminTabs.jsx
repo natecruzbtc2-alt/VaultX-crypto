@@ -1387,125 +1387,228 @@ export function AdminCRM() {
     const file = e.target.files[0];
     if (!file) return;
 
-    const tryEncodings = ["UTF-8","ISO-8859-1","Windows-1252"];
-    let encodingIdx = 0;
+    // Decode UTF-7 / LibreOffice encoded characters
+    const decodeUTF7 = (str) => str
+      .replace(/\+AEA-/g, '@')
+      .replace(/\+ACQ-/g, '$')
+      .replace(/\+ACI-/g, '"')
+      .replace(/\+AC0-/g, '-')
+      .replace(/\+AF8-/g, '_')
+      .replace(/\+ACY-/g, '&')
+      .replace(/\+APo-/g, "'")
+      .replace(/\+ADs-/g, ';')
+      .replace(/\+ADw-/g, '<')
+      .replace(/\+AD4-/g, '>')
+      .replace(/\+AFs-/g, '[')
+      .replace(/\+AF0-/g, ']')
+      .replace(/\+AHs-/g, '{')
+      .replace(/\+AH0-/g, '}')
+      .replace(/\+AFw-/g, '\\')
+      .replace(/\+AGA-/g, '`')
+      .replace(/\+ACM-/g, '#')
+      .replace(/\+ACU-/g, '%')
+      .replace(/\+ACo-/g, '*')
+      .replace(/\+[A-Z0-9]+-/g, '') // remove any remaining UTF-7 sequences
+      .replace(/\+ACQ-([\d,]+)\+ACI-/g, '$1') // $"1,234" -> 1234
+      .replace(/^\+ACI-\+ACQ-([\d,]+)\+ACI-$/, '$1'); // clean quoted amounts
 
     const tryRead = (encoding) => {
       const reader = new FileReader();
       reader.onload = (ev) => {
-        let text = ev.target.result;
-        // Strip BOM
-        text = text.replace(/^\uFEFF/, "");
-        // If too many garbled chars, try next encoding
-        const garbled = (text.match(/[\uFFFD]/g)||[]).length;
-        if (garbled > 30 && encodingIdx < tryEncodings.length-1) {
-          encodingIdx++; tryRead(tryEncodings[encodingIdx]); return;
-        }
-        // Clean non-printable chars
-        text = text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, "");
+        let raw = ev.target.result;
+        raw = raw.replace(/^\uFEFF/, ''); // strip BOM
 
-        const lines = text.split(/\r?\n/).filter(l => l.trim());
-        if (lines.length < 2) { showToast("⚠️ File appears empty","info"); return; }
+        // Decode all UTF-7 sequences first
+        raw = decodeUTF7(raw);
 
-        // Auto-detect delimiter
-        const fl = lines[0];
-        let delim = ",";
-        if ((fl.match(/;/g)||[]).length > (fl.match(/,/g)||[]).length) delim = ";";
-        else if ((fl.match(/\t/g)||[]).length > 2) delim = "\t";
+        const allLines = raw.split(/\r?\n/);
 
-        const parseRow = (line) => {
-          const result=[]; let cur="", inQ=false;
-          for (let i=0;i<line.length;i++){
-            const ch=line[i];
-            if(ch==='"'){inQ=!inQ;continue;}
-            if(ch===delim&&!inQ){result.push(cur.trim());cur="";continue;}
-            cur+=ch;
+        // ── DETECT FORMAT ──────────────────────────────────────────────────
+        // Check if it's the "wrapped" format (each value on its own row)
+        // Signature: header row has many commas, but data rows mostly have commas at end
+        const dataLines = allLines.filter(l => l.trim());
+        if (dataLines.length < 2) { showToast('⚠️ File appears empty', 'info'); return; }
+
+        const firstLine = dataLines[0];
+        const delim = (firstLine.match(/;/g)||[]).length > (firstLine.match(/,/g)||[]).length ? ';' : ',';
+
+        // Count columns in header
+        const headerCols = firstLine.split(delim).length;
+
+        // Check if most data rows have only 1-2 values (wrapped format)
+        const sampleRows = dataLines.slice(1, 20);
+        const avgCols = sampleRows.reduce((a,l) => a + l.split(delim).filter(v=>v.trim()).length, 0) / sampleRows.length;
+        const isWrapped = avgCols < 3 && headerCols > 5;
+
+        let rows = [];
+
+        if (isWrapped) {
+          // ── WRAPPED FORMAT: every N lines = one client ──────────────────
+          // Your file: CODE, NAME, LASTNAME, STATE, PHONE, EMAIL, STATUS, DEPOSIT, BALANCE, CODE (10 fields per client, each on own row)
+          // Skip header row, then group every 10 non-empty lines + blank separator
+          const headerRow = firstLine.split(delim).map(h => h.trim().replace(/^"|"$/g,''));
+          const FIELDS_PER_CLIENT = headerRow.length || 10;
+
+          // Collect all non-separator values
+          const values = [];
+          let inClient = false;
+          let clientVals = [];
+
+          for (let i = 1; i < allLines.length; i++) {
+            const line = allLines[i];
+            const parts = line.split(delim);
+            const val = (parts[0]||'').trim().replace(/^"|"$/g,'');
+            const isEmpty = parts.every(p => !p.trim());
+
+            if (isEmpty) {
+              if (clientVals.length > 0) {
+                // Check if we have enough for a client
+                if (clientVals.length >= 7) values.push([...clientVals]);
+                clientVals = [];
+              }
+              continue;
+            }
+
+            clientVals.push(val);
+
+            // When we've collected enough fields for one client
+            if (clientVals.length === FIELDS_PER_CLIENT) {
+              values.push([...clientVals]);
+              clientVals = [];
+            }
           }
-          result.push(cur.trim());
-          return result.map(v=>v.replace(/^["\'\']|["\'\']$/g,"").trim());
-        };
+          if (clientVals.length >= 7) values.push(clientVals);
 
-        const rawHeaders = parseRow(lines[0]);
-        const h = rawHeaders.map(x=>x.toLowerCase().replace(/[^a-z0-9_\s]/g,"").replace(/\s+/g,"_").trim());
-
-        const colMap = {
-          first_name:    ["name","first_name","firstname","first","given_name","prenom","vorname"],
-          last_name:     ["last_name","last","surname","lastname","family_name","nom","nachname"],
-          state:         ["state","country","location","land","pays"],
-          phone:         ["number","phone","tel","mobile","telephone","phone_number","nummer"],
-          email:         ["email","e_mail","mail","courriel"],
-          status:        ["status","statut","stage"],
-          deposit:       ["deposit","deposited","invested","amount","einzahlung","montant"],
-          balance:       ["balance","total","guthaben","solde"],
-          security_code: ["code","security_code","security","antiphishing"],
-          agent:         ["agent","rep","assigned_to"],
-          notes:         ["notes","note","comments"],
-        };
-
-        const colIdx = {};
-        Object.keys(colMap).forEach(field => {
-          colIdx[field] = -1;
-          for (const v of colMap[field]) {
-            const idx = h.findIndex(hh=>hh===v||hh.includes(v)||v.includes(hh));
-            if(idx!==-1){colIdx[field]=idx;break;}
-          }
-        });
-
-        // Fallback: positional mapping (NAME,LAST,STATE,NUMBER,EMAIL,STATUS,DEPOSIT,BALANCE,CODE)
-        const matched = Object.values(colIdx).filter(v=>v!==-1).length;
-        if (matched < 2) {
-          Object.assign(colIdx,{first_name:0,last_name:1,state:2,phone:3,email:4,status:5,deposit:6,balance:7,security_code:8});
-        }
-
-        const validStatuses = ["New R","New","Call Again","VM","NA","In The Money"];
-        // Find which column index actually contains the NAME header
-        // Skip leading garbage columns (like column A in your file)
-        const nameColIdx = h.findIndex(hh => hh==="name"||hh==="first_name"||hh==="firstname");
-        const colOffset = nameColIdx > 0 ? nameColIdx : 0;
-
-        // Re-map colIdx with offset if needed
-        if (colOffset > 0 && matched < 2) {
-          Object.assign(colIdx,{
-            first_name:colOffset+0, last_name:colOffset+1, state:colOffset+2,
-            phone:colOffset+3, email:colOffset+4, status:colOffset+5,
-            deposit:colOffset+6, balance:colOffset+7, security_code:colOffset+8
+          // Map: header tells us field order
+          // Your header: ,NAME,LAST NAME,STATE,NUMBER,EMAIL,STATUS,DEPOSIT,BALANCE,CODE
+          // So col 0 = junk/code, col 1 = name, col 2 = last, col 3 = state, col 4 = phone, col 5 = email, col 6 = status, col 7 = deposit, col 8 = balance, col 9 = code
+          const hMap = {};
+          headerRow.forEach((h, i) => {
+            const hh = h.toLowerCase().replace(/\s+/g,'_').replace(/[^a-z0-9_]/g,'');
+            hMap[hh] = i;
           });
+
+          const getIdx = (...keys) => {
+            for (const k of keys) {
+              if (hMap[k] !== undefined) return hMap[k];
+            }
+            return -1;
+          };
+
+          const iName    = getIdx('name','first_name','firstname') || 1;
+          const iLast    = getIdx('last_name','lastname','surname') || 2;
+          const iState   = getIdx('state','country','location') || 3;
+          const iPhone   = getIdx('number','phone','tel','mobile') || 4;
+          const iEmail   = getIdx('email','mail') || 5;
+          const iStatus  = getIdx('status','statut') || 6;
+          const iDeposit = getIdx('deposit','deposited','amount') || 7;
+          const iBalance = getIdx('balance','total') || 8;
+          const iCode    = getIdx('code','security_code','security') || 9;
+
+          const cleanNum = v => parseFloat((v||'0').replace(/[$",\s+ACQ-\+ACI-]/g,'').replace(/,/g,'')) || 0;
+
+          rows = values.map((vals, i) => {
+            const get = idx => (idx >= 0 && idx < vals.length) ? vals[idx] : '';
+            const fn = get(iName), ln = get(iLast);
+            if (!fn && !ln) return null;
+            const rawStatus = get(iStatus);
+            const validStatuses = ['New R','New','Call Again','VM','NA','In The Money'];
+            const status = validStatuses.find(s=>s.toLowerCase()===rawStatus.toLowerCase())||'New R';
+            return {
+              _rowNum: i+2,
+              first_name: fn, last_name: ln,
+              state: get(iState),
+              phone: get(iPhone),
+              email: get(iEmail),
+              status,
+              deposit: cleanNum(get(iDeposit)),
+              balance: cleanNum(get(iBalance)),
+              security_code: get(iCode) || genCode(),
+              agent: '', notes: '',
+            };
+          }).filter(Boolean);
+
+        } else {
+          // ── NORMAL FORMAT: one client per row ───────────────────────────
+          const parseRow = (line) => {
+            const result=[]; let cur='', inQ=false;
+            for (const ch of line) {
+              if(ch==='"'){inQ=!inQ;continue;}
+              if(ch===delim&&!inQ){result.push(cur.trim());cur='';continue;}
+              cur+=ch;
+            }
+            result.push(cur.trim());
+            return result.map(v=>v.replace(/^["\'\']|["\'\']$/g,'').trim());
+          };
+
+          const rawHeaders = parseRow(dataLines[0]);
+          const h = rawHeaders.map(x=>x.toLowerCase().replace(/[^a-z0-9_\s]/g,'').replace(/\s+/g,'_').trim());
+
+          const colMap = {
+            first_name:    ['name','first_name','firstname','first','given_name'],
+            last_name:     ['last_name','last','surname','lastname','family_name'],
+            state:         ['state','country','location'],
+            phone:         ['number','phone','tel','mobile','telephone'],
+            email:         ['email','e_mail','mail'],
+            status:        ['status','statut','stage'],
+            deposit:       ['deposit','deposited','invested','amount'],
+            balance:       ['balance','total'],
+            security_code: ['code','security_code','security'],
+            agent:         ['agent','rep'],
+            notes:         ['notes','comments'],
+          };
+
+          const colIdx = {};
+          Object.keys(colMap).forEach(field => {
+            colIdx[field] = -1;
+            for (const v of colMap[field]) {
+              const idx = h.findIndex(hh=>hh===v||hh.includes(v)||v.includes(hh));
+              if(idx!==-1){colIdx[field]=idx;break;}
+            }
+          });
+
+          const matched = Object.values(colIdx).filter(v=>v!==-1).length;
+          if (matched < 2) {
+            Object.assign(colIdx,{first_name:1,last_name:2,state:3,phone:4,email:5,status:6,deposit:7,balance:8,security_code:9});
+          }
+
+          const cleanNum = v => parseFloat((v||'0').replace(/[$",\s]/g,'').replace(/,(?=\d{3})/g,'')) || 0;
+          const validStatuses = ['New R','New','Call Again','VM','NA','In The Money'];
+
+          rows = dataLines.slice(1).map((line,i) => {
+            if(!line.trim()) return null;
+            const vals = parseRow(line);
+            const get = f => colIdx[f]>=0&&colIdx[f]<vals.length?(vals[colIdx[f]]||''):'';
+            const fn=get('first_name'), ln=get('last_name');
+            if(!fn&&!ln) return null;
+            const rawSt=get('status');
+            const status=validStatuses.find(s=>s.toLowerCase()===rawSt.toLowerCase())||(rawSt.toLowerCase().includes('money')?'In The Money':'New R');
+            return {
+              _rowNum:i+2, first_name:fn, last_name:ln,
+              state:get('state'), phone:get('phone'), email:get('email'), status,
+              deposit:cleanNum(get('deposit')), balance:cleanNum(get('balance')),
+              security_code:get('security_code')||genCode(),
+              agent:get('agent'), notes:get('notes'),
+            };
+          }).filter(Boolean);
         }
 
-        const rows = lines.slice(1).map((line,i)=>{
-          if(!line.trim()) return null;
-          const vals = parseRow(line);
-          const get = f => colIdx[f]>=0&&colIdx[f]<vals.length?(vals[colIdx[f]]||""):"";
-          const fn=get("first_name"), ln=get("last_name");
-          if(!fn&&!ln) return null;
-          const rawSt=get("status");
-          const status=validStatuses.find(s=>s.toLowerCase()===rawSt.toLowerCase())
-            ||(rawSt.toLowerCase().includes("money")?"In The Money":"New R");
-          return {
-            _rowNum:i+2, first_name:fn, last_name:ln,
-            state:get("state"), phone:get("phone"), email:get("email"), status,
-            deposit:parseFloat((get("deposit")||"0").replace(/[$,\s]/g,""))||0,
-            balance:parseFloat((get("balance")||"0").replace(/[$,\s]/g,""))||0,
-            security_code:get("security_code")||genCode(),
-            agent:get("agent"), notes:get("notes"),
-          };
-        }).filter(Boolean);
-
-        if(!rows.length){showToast("⚠️ No valid rows found. In LibreOffice: File → Save As → Text CSV → Character set: UTF-8, Delimiter: comma","info");return;}
+        if(!rows.length){
+          showToast('⚠️ No valid rows found. Try: File → Save As → Text CSV → UTF-8 + comma delimiter', 'info');
+          return;
+        }
         setImportRows(rows);
         setShowImport(true);
       };
-      reader.onerror = ()=>{
-        if(encodingIdx<tryEncodings.length-1){encodingIdx++;tryRead(tryEncodings[encodingIdx]);}
-        else showToast("❌ Could not read file","info");
-      };
+      reader.onerror = () => showToast('❌ Could not read file', 'info');
       reader.readAsText(file, encoding);
     };
-    tryRead(tryEncodings[0]);
-    e.target.value = "";
+
+    tryRead('UTF-8');
+    e.target.value = '';
   };
 
-  const confirmImport = async () => {
+    const confirmImport = async () => {
     setImporting(true);
     const now = new Date().toISOString();
     let ok=0, fail=0;
