@@ -2,7 +2,7 @@ import { useApp } from "./AppContext";
 import { C, S, btn, globalCSS } from "./theme";
 import { TickerMini } from "./components";
 import { DashOverview, DashMarkets, DashWallet, DashPortfolio, DashTrading, DashHistory } from "./DashTabs";
-import { AdminUsers, AdminDeposits, AdminWallets, AdminWithdrawals, AdminPending, AdminFees, AdminMarkets, AdminSettings, AgentDepositBoard } from "./AdminTabs";
+import { AdminUsers, AdminDeposits, AdminWallets, AdminWithdrawals, AdminPending, AdminFees, AdminMarkets, AdminSettings, AgentDepositBoard, AdminCRM } from "./AdminTabs";
 
 // ─── MOBILE BOTTOM NAV ────────────────────────────────────────────────────────
 function MobileNav({ dashTab, setDashTab }) {
@@ -131,6 +131,7 @@ export function AdminPanel() {
     { id:"pending",     icon:"⏳", label:"Pending Tx",      badge:pendingCount },
     { id:"fees",        icon:"💰", label:"Fees",            badge:feeCount },
     { id:"markets",     icon:"📈", label:"Markets"          },
+    { id:"crm",         icon:"🗂️", label:"CRM"              },
     { id:"board",       icon:"🏆", label:"Deposit Board"    },
     { id:"settings",    icon:"⚙️", label:"Settings"         },
   ];
@@ -176,6 +177,7 @@ export function AdminPanel() {
           {adminTab==="pending"     && <AdminPending />}
           {adminTab==="fees"        && <AdminFees />}
           {adminTab==="markets"     && <AdminMarkets />}
+          {adminTab==="crm"         && <AdminCRM />}
           {adminTab==="board"       && <AgentDepositBoard />}
           {adminTab==="settings"    && <AdminSettings />}
         </div>
