@@ -1716,9 +1716,13 @@ export function AdminCRM() {
       <div style={{ ...S.card, padding:0, overflow:"hidden", borderColor:"rgba(255,200,0,.18)" }}>
         {/* Column headers — gold background like Excel */}
         <div style={{ overflowX:"auto", WebkitOverflowScrolling:"touch" }}>
-          <table style={{ ...S.tbl, minWidth:1000 }}>
+          <table style={{ ...S.tbl, minWidth:1100 }}>
             <thead>
               <tr>
+                <th style={{ ...S.th, width:40, background:"rgba(255,200,0,.12)", borderBottom:"2px solid rgba(255,200,0,.3)" }}>
+                  <input type="checkbox" onChange={toggleSelectAll} checked={selected.size===filtered.length&&filtered.length>0}
+                    style={{ cursor:"pointer", accentColor:"#ffc800", width:15, height:15 }}/>
+                </th>
                 {["NAME","LAST NAME","STATE","NUMBER","EMAIL","STATUS","DEPOSIT","BALANCE","CODE","ACTIONS"].map(h=>(
                   <th key={h} style={{ ...S.th, background:"rgba(255,200,0,.12)", color:"#ffc800", fontSize:11, fontWeight:700, letterSpacing:".08em", borderBottom:"2px solid rgba(255,200,0,.3)" }}>{h}</th>
                 ))}
@@ -1726,16 +1730,21 @@ export function AdminCRM() {
             </thead>
             <tbody>
               {loading ? (
-                <tr><td colSpan={10} style={{ ...S.td, textAlign:"center", padding:40, color:C.text3 }}>Loading CRM…</td></tr>
+                <tr><td colSpan={11} style={{ ...S.td, textAlign:"center", padding:40, color:C.text3 }}>Loading CRM…</td></tr>
               ) : filtered.length===0 ? (
-                <tr><td colSpan={10} style={{ ...S.td, textAlign:"center", padding:40, color:C.text3 }}>
+                <tr><td colSpan={11} style={{ ...S.td, textAlign:"center", padding:40, color:C.text3 }}>
                   {search||filterStat!=="All" ? "No clients match your filter." : "No clients yet — add one or import from CSV."}
                 </td></tr>
               ) : filtered.map((c,i)=>{
                 const isItm = c.status==="In The Money";
-                const rowBg = isItm ? "rgba(255,200,0,.06)" : i%2===0?"transparent":"rgba(255,255,255,.015)";
+                const isSelected = selected.has(c.id);
+                const rowBg = isSelected ? "rgba(255,200,0,.08)" : isItm ? "rgba(255,200,0,.06)" : i%2===0?"transparent":"rgba(255,255,255,.015)";
                 return (
-                  <tr key={c.id} style={{ background:rowBg }}>
+                  <tr key={c.id} style={{ background:rowBg, outline:isSelected?"1px solid rgba(255,200,0,.2)":"none" }}>
+                    <td style={{ ...S.td, width:40, textAlign:"center" }}>
+                      <input type="checkbox" checked={isSelected} onChange={()=>toggleSelect(c.id)}
+                        style={{ cursor:"pointer", accentColor:"#ffc800", width:15, height:15 }}/>
+                    </td>
                     <td style={{ ...S.td, fontWeight:700, color:isItm?"#ffc800":C.text }}>{c.first_name||"—"}</td>
                     <td style={{ ...S.td, color:C.text }}>{c.last_name||"—"}</td>
                     <td style={{ ...S.td, fontSize:12, color:C.text2 }}>{c.state||"—"}</td>
@@ -1766,8 +1775,8 @@ export function AdminCRM() {
                     </td>
                     <td style={S.td}>
                       <div style={{ display:"flex", gap:5 }}>
-                        <button style={{ ...btn("ghost"), padding:"4px 10px", fontSize:11 }} onClick={e=>{e.stopPropagation();startEdit(c);}}>✏️</button>
-                        <button style={{ ...btn("danger"), padding:"4px 10px", fontSize:11 }} onClick={e=>{e.stopPropagation();deleteClient(c.id);}}>🗑</button>
+                        <button style={{ ...btn("ghost"), padding:"5px 12px", fontSize:12 }} onClick={e=>{e.stopPropagation();startEdit(c);}}>✏️ Edit</button>
+                        <button style={{ ...btn("danger"), padding:"5px 12px", fontSize:12 }} onClick={e=>{e.stopPropagation();deleteClient(c.id);}}>🗑 Del</button>
                       </div>
                     </td>
                   </tr>
