@@ -1259,6 +1259,7 @@ export function AdminCRM() {
   const [showImport, setShowImport] = useState(false);
   const [importRows, setImportRows] = useState([]);
   const [importing,  setImporting]  = useState(false);
+  const [selected,   setSelected]   = useState(new Set());
   const [form, setForm] = useState({
     first_name:"", last_name:"", state:"", phone:"", email:"",
     status:"New R", deposit:"", balance:"", security_code:"", notes:"", agent:""
@@ -1334,8 +1335,35 @@ export function AdminCRM() {
     try {
       await supabase.from("vx_crm").delete().eq("id", id);
       setClients(prev => prev.filter(c => c.id !== id));
-      showToast("Deleted","info");
+      setSelected(prev => { const n = new Set(prev); n.delete(id); return n; });
+      showToast("Client deleted", "info");
     } catch(e) {}
+  };
+
+  const bulkDelete = async () => {
+    if (selected.size === 0) return;
+    if (!window.confirm(`Delete ${selected.size} selected client${selected.size>1?"s":""}? This cannot be undone.`)) return;
+    const ids = Array.from(selected);
+    try {
+      await supabase.from("vx_crm").delete().in("id", ids);
+      setClients(prev => prev.filter(c => !selected.has(c.id)));
+      setSelected(new Set());
+      showToast(`✅ Deleted ${ids.length} clients`, "success");
+    } catch(e) { showToast("❌ Failed to delete", "info"); }
+  };
+
+  const toggleSelect = (id) => setSelected(prev => {
+    const n = new Set(prev);
+    n.has(id) ? n.delete(id) : n.add(id);
+    return n;
+  });
+
+  const toggleSelectAll = () => {
+    if (selected.size === filtered.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(filtered.map(c => c.id)));
+    }
   };
 
   const updateStatus = async (id, status) => {
@@ -1573,7 +1601,22 @@ export function AdminCRM() {
       </div>
 
       {/* Search */}
-      <input style={{ ...S.inp, maxWidth:340, marginBottom:16 }} placeholder="🔍 Search name, phone, email…" value={search} onChange={e=>setSearch(e.target.value)}/>
+      <input style={{ ...S.inp, maxWidth:340, marginBottom:selected.size>0?10:16 }} placeholder="🔍 Search name, phone, email…" value={search} onChange={e=>setSearch(e.target.value)}/>
+
+      {/* Bulk action bar */}
+      {selected.size > 0 && (
+        <div style={{ display:"flex", alignItems:"center", gap:12, padding:"10px 16px", background:"rgba(239,68,68,.08)", border:"1px solid rgba(239,68,68,.3)", borderRadius:10, marginBottom:16, flexWrap:"wrap" }}>
+          <span style={{ fontSize:13, fontWeight:600, color:C.text }}>
+            {selected.size} client{selected.size>1?"s":""} selected
+          </span>
+          <button style={{ ...btn("danger"), padding:"7px 18px", fontSize:13 }} onClick={bulkDelete}>
+            🗑 Delete Selected
+          </button>
+          <button style={{ ...btn("ghost"), padding:"7px 14px", fontSize:12 }} onClick={() => setSelected(new Set())}>
+            Clear selection
+          </button>
+        </div>
+      )}
 
       {/* Add/Edit Form */}
       {showForm && (
@@ -1722,9 +1765,9 @@ export function AdminCRM() {
                       </div>
                     </td>
                     <td style={S.td}>
-                      <div style={{ display:"flex", gap:6 }}>
-                        <button style={{ ...btn("ghost"), padding:"4px 10px", fontSize:11 }} onClick={()=>startEdit(c)}>✏️ Edit</button>
-                        <button style={{ ...btn("danger"), padding:"4px 10px", fontSize:11 }} onClick={()=>deleteClient(c.id)}>🗑</button>
+                      <div style={{ display:"flex", gap:5 }}>
+                        <button style={{ ...btn("ghost"), padding:"4px 10px", fontSize:11 }} onClick={e=>{e.stopPropagation();startEdit(c);}}>✏️</button>
+                        <button style={{ ...btn("danger"), padding:"4px 10px", fontSize:11 }} onClick={e=>{e.stopPropagation();deleteClient(c.id);}}>🗑</button>
                       </div>
                     </td>
                   </tr>
