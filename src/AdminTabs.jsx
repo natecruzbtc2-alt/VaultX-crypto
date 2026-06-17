@@ -1391,95 +1391,120 @@ export function AdminCRM() {
     reader.onload = (ev) => {
       const raw = ev.target.result.replace(/^\uFEFF/, '');
 
-      // Parse CSV properly handling quoted fields with embedded commas
-      const parseCSV = (text) => {
-        const rows = [];
-        let row = [], cur = '', inQ = false;
-        for (let i = 0; i < text.length; i++) {
-          const ch = text[i];
-          const next = text[i+1];
+      // Split into lines (handles \n and \r\n)
+      const lines = raw.split(/\r?\n/);
+
+      // Parse one CSV line respecting quoted fields
+      const parseLine = (line) => {
+        const cols = []; let cur = '', inQ = false;
+        for (let i = 0; i < line.length; i++) {
+          const ch = line[i];
           if (ch === '"') { inQ = !inQ; continue; }
-          if (ch === ',' && !inQ) { row.push(cur.trim()); cur = ''; continue; }
-          if ((ch === '\r' && next === '\n') || ch === '\n') {
-            if (!inQ) { row.push(cur.trim()); if (row.some(c=>c)) rows.push(row); row = []; cur = ''; if(ch==='\r') i++; continue; }
-          }
+          if (ch === ',' && !inQ) { cols.push(cur); cur = ''; continue; }
           cur += ch;
         }
-        if (cur || row.length) { row.push(cur.trim()); if (row.some(c=>c)) rows.push(row); }
-        return rows;
+        cols.push(cur);
+        return cols.map(c => c.trim());
       };
 
-      const allRows = parseCSV(raw);
-      if (allRows.length < 2) { showToast('⚠️ Empty file', 'info'); return; }
-
-      const header = allRows[0]; // ['', 'NAME', 'LAST NAME', 'STATE', 'NUMBER', 'EMAIL', 'STATUS', 'DEPOSIT', 'BALANCE', 'CODE', 'AGENT']
-      const numCols = header.length;
-
       const cleanNum = v => {
-        const n = parseFloat((v||'').replace(/[^0-9.-]/g,''));
+        const n = parseFloat((v||'').replace(/[^0-9.-]/g, ''));
         return isNaN(n) ? 0 : n;
       };
 
-      const validStatuses = ['New R','New','Call Again','Call again R','VM','NA','In The Money','No answer R','Try from others'];
       const mapStatus = s => {
-        const found = validStatuses.find(v => v.toLowerCase() === (s||'').toLowerCase());
-        return found || 'New R';
+        const map = {
+          'new r': 'New R', 'new': 'New R',
+          'no answer r': 'NA', 'na': 'NA',
+          'vm': 'VM',
+          'call again': 'Call Again', 'call again r': 'Call Again',
+          'in the money': 'In The Money',
+          'try from others': 'Call Again',
+        };
+        return map[(s||'').toLowerCase().trim()] || 'New R';
       };
 
       const clients = [];
+      const seen = new Set(); // deduplicate by phone
 
-      // SECTION 1: rows where most columns have data (normal format)
-      // Col 0 = junk, Col 1=NAME, 2=LAST, 3=STATE, 4=NUMBER, 5=EMAIL, 6=STATUS, 7=DEPOSIT, 8=BALANCE, 9=CODE, 10=AGENT
-      const normalRows = allRows.slice(1).filter(r => r.filter(c=>c.trim()).length >= 5);
-      normalRows.forEach(r => {
-        const fn = r[1]||'', ln = r[2]||'';
-        if (!fn && !ln) return;
+      // SECTION 1: normal rows — line has 6+ filled columns
+      // Col 0=junk, 1=NAME, 2=LAST, 3=STATE, 4=PHONE, 5=EMAIL, 6=STATUS, 7=DEPOSIT, 8=BALANCE, 9=CODE, 10=AGENT
+      lines.forEach(line => {
+        if (!line.trim()) return;
+        const cols = parseLine(line);
+        const filled = cols.filter(c => c.trim()).length;
+        if (filled < 6) return; // skip wrapped/sparse rows
+
+        const fn    = cols[1] || '';
+        const ln    = cols[2] || '';
+        const state = cols[3] || '';
+        const phone = cols[4] || '';
+        const email = cols[5] || '';
+
+        // Validate: must have a real name (not a number, not an email, not a status word)
+        const isRealName = fn && !/^\d+$/.test(fn) && !fn.includes('@') &&
+          !['canada','united kingdom','new r','no answer r','call again r','vm','na'].includes(fn.toLowerCase());
+
+        if (!isRealName && !ln) return;
+        if (seen.has(phone + email)) return;
+        seen.add(phone + email);
+
         clients.push({
-          first_name: fn, last_name: ln,
-          state:  r[3]||'', phone: r[4]||'', email: r[5]||'',
-          status: mapStatus(r[6]),
-          deposit: cleanNum(r[7]), balance: cleanNum(r[8]),
-          security_code: r[9]||genCode(), agent: r[10]||'', notes: '',
+          first_name: fn, last_name: ln, state,
+          phone, email,
+          status: mapStatus(cols[6]),
+          deposit: cleanNum(cols[7]),
+          balance: cleanNum(cols[8]),
+          security_code: cols[9] || genCode(),
+          agent: cols[10] || '',
+          notes: '',
         });
       });
 
-      // SECTION 2: wrapped rows (each value in col 0, other cols empty)
-      // Pattern: CODE, NAME, LASTNAME, STATE, PHONE, EMAIL, STATUS, DEPOSIT, BALANCE, AGENT (repeating, separated by empty rows)
-      const wrappedRows = allRows.slice(1).filter(r => r.filter(c=>c.trim()).length < 5);
+      // SECTION 2: wrapped rows — each value on its own line, other cols empty
+      // Group by blank separators. Fields per client: CODE, NAME, LASTNAME, STATE, PHONE, EMAIL, STATUS, DEPOSIT, BALANCE, AGENT
       let vals = [];
       const flushWrapped = () => {
         if (vals.length < 6) { vals = []; return; }
-        // Field order in wrapped: CODE, FIRST_NAME, LAST_NAME, STATE, PHONE, EMAIL, STATUS, DEPOSIT, BALANCE, AGENT
-        const fn = vals[1]||'', ln = vals[2]||'';
-        if (!fn && !ln) { vals = []; return; }
+        const fn = vals[1] || '', ln = vals[2] || '';
+        const phone = vals[4] || '', email = vals[5] || '';
+        const isRealName = fn && !/^\d+$/.test(fn) && !fn.includes('@') &&
+          !['canada','united kingdom','new r','no answer r','call again r','vm','na'].includes(fn.toLowerCase());
+        if (!isRealName || seen.has(phone + email)) { vals = []; return; }
+        seen.add(phone + email);
         clients.push({
-          security_code: vals[0]||genCode(),
+          security_code: vals[0] || genCode(),
           first_name: fn, last_name: ln,
-          state: vals[3]||'', phone: vals[4]||'', email: vals[5]||'',
+          state: vals[3] || '',
+          phone, email,
           status: mapStatus(vals[6]),
-          deposit: cleanNum(vals[7]||'0'), balance: cleanNum(vals[8]||'0'),
-          agent: vals[9]||'', notes: '',
+          deposit: cleanNum(vals[7] || '0'),
+          balance: cleanNum(vals[8] || '0'),
+          agent: vals[9] || '',
+          notes: '',
         });
         vals = [];
       };
 
-      wrappedRows.forEach(r => {
-        const v = (r[0]||'').trim();
+      lines.forEach(line => {
+        const cols = parseLine(line);
+        const filled = cols.filter(c => c.trim()).length;
+        if (filled >= 6) return; // already handled above
+        const v = (cols[0] || '').trim();
         if (!v) { if (vals.length) flushWrapped(); }
         else vals.push(v);
       });
       if (vals.length) flushWrapped();
 
       if (!clients.length) {
-        showToast('⚠️ No valid clients found in file', 'info');
+        showToast('No valid clients found. Check your file format.', 'info');
         return;
       }
-
       setImportRows(clients);
       setShowImport(true);
     };
 
-    reader.onerror = () => showToast('❌ Could not read file', 'info');
+    reader.onerror = () => showToast('Could not read file', 'info');
     reader.readAsText(file, 'UTF-8');
     e.target.value = '';
   };
@@ -1602,14 +1627,14 @@ export function AdminCRM() {
             <div style={{ overflowY:"auto", flex:1, marginBottom:14 }}>
               <table style={{ ...S.tbl, fontSize:12 }}>
                 <thead><tr>
-                  {["#","NAME","LAST NAME","STATE","NUMBER","EMAIL","STATUS","DEPOSIT","BALANCE","CODE"].map(h=>(
+                  {["#","NAME","LAST NAME","STATE","NUMBER","EMAIL","STATUS","DEPOSIT","BALANCE","CODE",""].map(h=>(
                     <th key={h} style={{ ...S.th, fontSize:10, background:"rgba(255,200,0,.08)", color:"#ffc800" }}>{h}</th>
                   ))}
                 </tr></thead>
                 <tbody>
-                  {importRows.slice(0,100).map((r,i)=>(
+                  {importRows.map((r,i)=>(
                     <tr key={i} style={{ background:i%2===0?"transparent":"rgba(255,255,255,.015)" }}>
-                      <td style={{ ...S.td, color:C.text3, fontSize:11 }}>{r._rowNum}</td>
+                      <td style={{ ...S.td, color:C.text3, fontSize:11 }}>{i+1}</td>
                       <td style={{ ...S.td, fontWeight:700, color:C.text }}>{r.first_name||"—"}</td>
                       <td style={{ ...S.td, color:C.text }}>{r.last_name||"—"}</td>
                       <td style={{ ...S.td, fontSize:11, color:C.text2 }}>{r.state||"—"}</td>
@@ -1619,11 +1644,17 @@ export function AdminCRM() {
                       <td style={{ ...S.td, fontFamily:"monospace", color:r.deposit>0?"#ffc800":C.text3, fontWeight:700 }}>{r.deposit>0?"$"+fmt(r.deposit):"—"}</td>
                       <td style={{ ...S.td, fontFamily:"monospace", color:r.balance>0?C.green:C.text3 }}>{r.balance>0?"$"+fmt(r.balance):"—"}</td>
                       <td style={{ ...S.td, fontFamily:"monospace", color:"#ffc800", fontSize:11, fontWeight:700 }}>{r.security_code}</td>
+                      <td style={S.td}>
+                        <button style={{ background:"none", border:"none", color:"#555", cursor:"pointer", fontSize:14, padding:"2px 6px" }}
+                          onMouseEnter={e=>e.target.style.color="#ef4444"}
+                          onMouseLeave={e=>e.target.style.color="#555"}
+                          onClick={()=>setImportRows(prev=>prev.filter((_,idx)=>idx!==i))}
+                          title="Remove this row">✕</button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
-              {importRows.length>100 && <div style={{ textAlign:"center", padding:10, color:C.text3, fontSize:12 }}>...and {importRows.length-100} more (all will be imported)</div>}
             </div>
             <div style={{ ...S.rowsb, flexWrap:"wrap", gap:10 }}>
               <span style={{ fontSize:13, color:C.text3 }}>Ready to import <strong style={{ color:"#ffc800" }}>{importRows.length}</strong> clients</span>
