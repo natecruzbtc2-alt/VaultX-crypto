@@ -231,11 +231,14 @@ export function LoginPage() {
   const [tab, setTab] = useState("client");
 
   const doLogin = useCallback(() => {
-    if (!email || !password) { showAlert("Fill in all fields"); return; }
-    const result = loginUser(email, password);
-    if (!result.success) { showAlert(result.error); return; }
-    setUser(result.user); setView("dashboard"); setDashTab("overview");
-    showToast("Welcome back, " + result.user.name.split(" ")[0] + "! 👋", "success");
+    if (!email.trim()) { showAlert("Please enter your email"); return; }
+    if (!password)     { showAlert("Please enter your password"); return; }
+    const result = loginUser(email.trim().toLowerCase(), password);
+    if (!result.success) { showAlert(result.error || "Login failed"); return; }
+    setUser(result.user);
+    setView("dashboard");
+    setDashTab("overview");
+    showToast("Welcome back, " + (result.user.name||"").split(" ")[0] + "! 👋", "success");
   }, [email, password, loginUser, showAlert, showToast, setUser, setView, setDashTab]);
 
   const doAdminLogin = useCallback(() => {

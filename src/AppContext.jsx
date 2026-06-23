@@ -266,21 +266,21 @@ export function AppProvider({ children }) {
   // ── LOGIN (checks hashed password) ────────────────────────────────────────────
   const loginUser = useCallback((email, password) => {
     // Rate limiting: max 5 attempts per email per 5 minutes
-    const key = email.toLowerCase();
+    const key = email.toLowerCase().trim();
     const now = Date.now();
     if (!loginAttempts.current[key]) loginAttempts.current[key] = { count:0, firstAt:now };
     const att = loginAttempts.current[key];
     if (now - att.firstAt > 5*60*1000) { att.count=0; att.firstAt=now; }
     if (att.count >= 5) return { success:false, error:"Too many attempts. Please wait 5 minutes." };
 
-    const u = users.find(u => u.email === email);
-    if (!u) { att.count++; return { success:false, error:"User not found" }; }
+    const u = users.find(u => (u.email||"").toLowerCase().trim() === key);
+    if (!u) { att.count++; return { success:false, error:"No account found with that email" }; }
 
     // Support both old plain-text passwords (migration) and new hashed ones
     const valid = u.password === password ||         // old plain text (migration)
                   checkPw(password, u.password);     // new hashed
 
-    if (!valid) { att.count++; return { success:false, error:"Invalid credentials" }; }
+    if (!valid) { att.count++; return { success:false, error:"Incorrect password" }; }
 
     att.count = 0; // reset on success
     return { success:true, user:u };
