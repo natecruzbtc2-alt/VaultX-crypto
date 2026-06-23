@@ -709,7 +709,7 @@ export function AdminFees() {
 
       <div style={{ ...S.g4, marginBottom:22 }}>
         {[
-          { l:"Active Clients",    v:users.length,         c:C.purple3, i:"👥" },
+          { l:"Active Clients",    v:users.length,         c:"#ffc800", i:"👥" },
           { l:"Pending Fee Reqs",  v:pendingFees.length,   c:pendingFees.length>0?C.gold:C.green, i:"⏳" },
           { l:"Paid Fees",         v:paidFees.length,      c:C.green,   i:"✅" },
           { l:"Est. Platform Rev", v:"$"+fmt(rev),         c:C.gold,    i:"💰" },

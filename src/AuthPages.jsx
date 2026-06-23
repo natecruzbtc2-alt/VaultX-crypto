@@ -17,9 +17,9 @@ function NavBar() {
       </div>
       <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
         <span style={{ fontSize: 13, color: C.text3, cursor: "pointer" }} onClick={() => setView("about")}
-          onMouseEnter={e => e.target.style.color = C.purple3} onMouseLeave={e => e.target.style.color = C.text3}>About</span>
+          onMouseEnter={e => e.target.style.color = "#ffc800"} onMouseLeave={e => e.target.style.color = C.text3}>About</span>
         <span style={{ fontSize: 13, color: C.text3, cursor: "pointer" }} onClick={() => setView("contact")}
-          onMouseEnter={e => e.target.style.color = C.purple3} onMouseLeave={e => e.target.style.color = C.text3}>Contact</span>
+          onMouseEnter={e => e.target.style.color = "#ffc800"} onMouseLeave={e => e.target.style.color = C.text3}>Contact</span>
         <button style={{ ...btn("ghost"), padding: "7px 16px", fontSize: 13 }} onClick={() => setView("login")}>Sign In</button>
         <button style={{ ...btn(), padding: "7px 16px", fontSize: 13 }} onClick={() => setView("register")}>Get Started</button>
       </div>
@@ -120,7 +120,7 @@ export function LandingPage() {
                 </div>
                 <div style={{ marginTop: 16 }}>
                   <div style={{ fontSize: 22, fontWeight: 700, color: C.text }}>${p.price < 1 ? p.price.toFixed(4) : fmt(p.price)}</div>
-                  <div style={{ marginTop: 10 }}><Spark data={p.spark} color={up ? C.purple : C.red} /></div>
+                  <div style={{ marginTop: 10 }}><Spark data={p.spark} color={up ? '#ffc800' : C.red} /></div>
                 </div>
               </div>
             );
@@ -152,7 +152,7 @@ export function LandingPage() {
                       <td style={S.td}><span style={{ color: up ? C.green : C.red, fontWeight: 600 }}>{up ? "+" : ""}{fmt(p.change)}%</span></td>
                       <td style={{ ...S.td, fontFamily: "monospace" }}>${fmt(p.price * 19000000 / 1e9, 1)}B</td>
                       <td style={{ ...S.td, fontFamily: "monospace" }}>${fmt(p.price * 210000 / 1e6, 1)}M</td>
-                      <td style={S.td}><Spark data={p.spark} color={up ? C.purple : C.red} w={80} h={28} /></td>
+                      <td style={S.td}><Spark data={p.spark} color={up ? '#ffc800' : C.red} w={80} h={28} /></td>
                       <td style={S.td}><button style={{ ...btn(), padding: "6px 16px", fontSize: 12 }} onClick={() => setView("register")}>Trade</button></td>
                     </tr>
                   );
