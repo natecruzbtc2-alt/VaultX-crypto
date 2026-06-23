@@ -1289,11 +1289,6 @@ export function AdminCRM() {
 
   useEffect(() => {
     loadClients();
-    if (!supabase) return;
-    const ch = supabase.channel("vx_crm_rt2")
-      .on("postgres_changes", { event:"*", schema:"public", table:"vx_crm" }, loadClients)
-      .subscribe();
-    return () => supabase.removeChannel(ch);
   }, []);
 
   const loadClients = async () => {
@@ -1339,6 +1334,7 @@ export function AdminCRM() {
         return;
       }
       showToast("✅ Client updated", "success");
+      await loadClients(); // reload fresh from Supabase
     } else {
       const newId = "CRM" + Date.now() + Math.random().toString(36).slice(2,6);
       const rec   = { ...buildRec(newId), created_at: now };
@@ -1351,6 +1347,7 @@ export function AdminCRM() {
         return;
       }
       showToast("✅ Client added!", "success");
+      await loadClients(); // reload fresh from Supabase
     }
     resetForm();
   };
