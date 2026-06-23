@@ -97,7 +97,7 @@ export function Dashboard() {
           </button>
           <div style={{ padding:"14px 16px", background:`rgba(255,200,0,.1)`, border:`1px solid rgba(255,200,0,.2)`, borderRadius:12, marginTop:8 }}>
             <div style={{ fontSize:10, color:C.text3, marginBottom:5, textTransform:"uppercase", letterSpacing:".06em" }}>Balance</div>
-            <div style={{ fontSize:18, fontWeight:800, color:C.red3 }}>${(user?.balance||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+            <div style={{ fontSize:18, fontWeight:800, color:C.gold }}>${(user?.balance||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
             <div style={{ fontSize:11, color:C.text3, marginTop:4 }}>Portfolio: ${(user?.portfolio||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
           </div>
         </div>

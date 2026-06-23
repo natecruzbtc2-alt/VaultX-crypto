@@ -1057,7 +1057,7 @@ export function AgentDepositBoard() {
       {/* Brand Box */}
       {editingBrand ? (
         <div style={{ ...S.card, marginBottom:18, borderColor:"rgba(255,200,0,.3)" }}>
-          <div style={{ fontSize:13, fontWeight:700, color:C.red3, marginBottom:14 }}>🏢 Company Brand</div>
+          <div style={{ fontSize:13, fontWeight:700, color:"#ffc800", marginBottom:14 }}>🏢 Company Brand</div>
           <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr auto auto", gap:12, alignItems:"flex-end" }}>
             <div>
               <label style={S.label}>Company Name</label>
@@ -1073,11 +1073,11 @@ export function AgentDepositBoard() {
         </div>
       ) : companyName ? (
         <div style={{ marginBottom:18, display:"flex", alignItems:"center", gap:14 }}>
-          <div style={{ background:"linear-gradient(135deg,#e8000d,#ff4d55)", borderRadius:14, padding:"12px 24px" }}>
+          <div style={{ background:"linear-gradient(135deg,#e6b400,#ffd633)", borderRadius:14, padding:"12px 24px" }}>
             <div style={{ fontSize:22, fontWeight:900, color:"#000", letterSpacing:"-.5px" }}>{companyName}</div>
             {companyTag && <div style={{ fontSize:12, color:"rgba(0,0,0,.65)", marginTop:2 }}>{companyTag}</div>}
           </div>
-          <div style={{ fontSize:13, color:C.red3, fontStyle:"italic", opacity:.7 }}>Good Luck! 🍀</div>
+          <div style={{ fontSize:13, color:"#ffc800", fontStyle:"italic", opacity:.7 }}>Good Luck! 🍀</div>
           <button style={{ ...btn("ghost"), padding:"5px 12px", fontSize:11, marginLeft:"auto" }} onClick={() => setEditingBrand(true)}>✏️ Edit</button>
         </div>
       ) : (
@@ -1087,7 +1087,7 @@ export function AgentDepositBoard() {
       {/* Header */}
       <div style={{ ...S.rowsb, marginBottom:22 }}>
         <div>
-          <div style={{ ...S.hd, color:C.red3 }}>Agent Deposit Board</div>
+          <div style={{ ...S.hd, color:"#ffc800" }}>Agent Deposit Board</div>
           <div style={S.sub}>Log and track all agent deposits</div>
         </div>
         <button style={{ ...btn("ghost"), padding:"7px 16px", fontSize:12 }} onClick={() => setAuthed(false)}>🔒 Lock</button>
@@ -1112,7 +1112,7 @@ export function AgentDepositBoard() {
       {/* Form */}
       <div className="__vx_board_form" style={{ ...S.card, marginBottom:22, borderColor:editId?"rgba(255,200,0,.5)":"rgba(255,200,0,.25)", background:editId?"linear-gradient(160deg,rgba(255,200,0,.09),rgba(0,0,0,0))":"linear-gradient(160deg,rgba(255,200,0,.06),rgba(0,0,0,0))" }}>
         <div style={{ ...S.rowsb, marginBottom:18 }}>
-          <div style={{ fontSize:13, fontWeight:700, color:C.red3, textTransform:"uppercase", letterSpacing:".07em" }}>
+          <div style={{ fontSize:13, fontWeight:700, color:"#ffc800", textTransform:"uppercase", letterSpacing:".07em" }}>
             {editId ? "✏️ Edit Deposit" : "+ Log New Deposit"}
           </div>
           {editId && <button style={{ ...btn("ghost"), padding:"5px 14px", fontSize:12 }} onClick={cancelEdit}>Cancel Edit</button>}
@@ -1177,7 +1177,7 @@ export function AgentDepositBoard() {
               </td></tr>
             ) : deposits.map(d => (
               <tr key={d.id}>
-                <td style={{ ...S.td, fontSize:16, fontWeight:800, color:C.red3, fontFamily:"monospace" }}>${fmt(d.amount)}</td>
+                <td style={{ ...S.td, fontSize:16, fontWeight:800, color:"#ffc800", fontFamily:"monospace" }}>${fmt(d.amount)}</td>
                 <td style={{ ...S.td, fontSize:12, color:C.text2 }}>{fmtDate(d.date)}</td>
                 <td style={S.td}>
                   <span style={{ display:"inline-flex", alignItems:"center", gap:5, padding:"4px 12px", borderRadius:20, fontSize:11, fontWeight:700,
@@ -1188,7 +1188,7 @@ export function AgentDepositBoard() {
                   </span>
                 </td>
                 <td style={{ ...S.td, fontWeight:600, color:C.text }}>{d.agent}</td>
-                <td style={{ ...S.td, fontWeight:600, color:C.red3 }}>{d.client||"—"}</td>
+                <td style={{ ...S.td, fontWeight:600, color:"#ffc800" }}>{d.client||"—"}</td>
                 <td style={{ ...S.td, fontWeight:600, color:"#60a5fa" }}>{d.closer||"—"}</td>
                 <td style={{ ...S.td, fontFamily:"monospace", color:C.text3 }}>${fmt(runMap[d.id])}</td>
                 <td style={S.td}>
@@ -1211,7 +1211,7 @@ export function AgentDepositBoard() {
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"16px 20px", background:"rgba(255,200,0,.04)", borderTop:"1px solid rgba(255,200,0,.15)", flexWrap:"wrap", gap:10 }}>
             <span style={{ fontSize:11, fontWeight:700, color:C.text3, textTransform:"uppercase", letterSpacing:".1em" }}>Grand Total</span>
             <div style={{ display:"flex", alignItems:"center", gap:12 }}>
-              <span style={{ fontSize:24, fontWeight:800, color:C.red3, fontFamily:"monospace" }}>${fmt(total)}</span>
+              <span style={{ fontSize:24, fontWeight:800, color:"#ffc800", fontFamily:"monospace" }}>${fmt(total)}</span>
               <button style={{ ...btn("success"), padding:"8px 18px", fontSize:13 }} onClick={() => exportToExcel(deposits, companyName)}>
                 📊 Export to Excel
               </button>
@@ -1229,7 +1229,7 @@ const CRM_STATUSES = [
   { id:"Call Again",   label:"Call Again",    color:"#a78bfa", bg:"rgba(167,139,250,.12)" },
   { id:"VM",           label:"VM",            color:"#fbbf24", bg:"rgba(251,191,36,.12)"  },
   { id:"NA",           label:"NA",            color:"#f87171", bg:"rgba(248,113,113,.12)" },
-  { id:"In The Money", label:"💰 In The Money", color:C.red3, bg:"rgba(255,200,0,.15)"  },
+  { id:"In The Money", label:"💰 In The Money", color:"#ffc800", bg:"rgba(255,200,0,.15)"  },
 ];
 
 function StatusBadge({ status }) {
@@ -1270,7 +1270,7 @@ export function AdminCRM() {
     { id:"Call Again",   color:"#a78bfa", bg:"rgba(167,139,250,.12)"  },
     { id:"VM",           color:"#fbbf24", bg:"rgba(251,191,36,.12)"   },
     { id:"NA",           color:"#f87171", bg:"rgba(248,113,113,.12)"  },
-    { id:"In The Money", color:C.red3, bg:"rgba(255,200,0,.18)"    },
+    { id:"In The Money", color:"#ffc800", bg:"rgba(255,200,0,.18)"    },
   ];
 
   const StatusBadge = ({ status }) => {
@@ -1601,7 +1601,7 @@ export function AdminCRM() {
       <div style={{ ...S.rowsb, marginBottom:18, flexWrap:"wrap", gap:12 }}>
         <div>
           <div style={S.hd}>CRM — Client Manager</div>
-          <div style={S.sub}>{clients.length} clients · Total deposited: <strong style={{ color:C.red3 }}>${fmt(clients.reduce((a,c)=>a+(c.deposit||c.amount_deposited||0),0))}</strong></div>
+          <div style={S.sub}>{clients.length} clients · Total deposited: <strong style={{ color:"#ffc800" }}>${fmt(clients.reduce((a,c)=>a+(c.deposit||c.amount_deposited||0),0))}</strong></div>
         </div>
         <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
           <input id="crm-import" type="file" accept=".csv,.txt" style={{ display:"none" }} onChange={parseImportFile}/>
@@ -1644,7 +1644,7 @@ export function AdminCRM() {
       {showForm && (
         <div style={{ ...S.card, marginBottom:20, borderColor:editClient?"rgba(255,200,0,.5)":"rgba(255,200,0,.2)" }}>
           <div style={{ ...S.rowsb, marginBottom:16 }}>
-            <span style={{ fontSize:14, fontWeight:700, color:C.red3 }}>{editClient?"✏️ Edit Client":"👤 New Client"}</span>
+            <span style={{ fontSize:14, fontWeight:700, color:"#ffc800" }}>{editClient?"✏️ Edit Client":"👤 New Client"}</span>
             <button style={{ ...btn("ghost"), padding:"5px 12px", fontSize:12 }} onClick={resetForm}>Cancel</button>
           </div>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))", gap:12, marginBottom:12 }}>
@@ -1693,7 +1693,7 @@ export function AdminCRM() {
               <table style={{ ...S.tbl, fontSize:12 }}>
                 <thead><tr>
                   {["#","NAME","LAST NAME","STATE","NUMBER","EMAIL","STATUS","DEPOSIT","BALANCE","CODE",""].map(h=>(
-                    <th key={h} style={{ ...S.th, fontSize:10, background:"rgba(255,200,0,.08)", color:C.red3 }}>{h}</th>
+                    <th key={h} style={{ ...S.th, fontSize:10, background:"rgba(255,200,0,.08)", color:"#ffc800" }}>{h}</th>
                   ))}
                 </tr></thead>
                 <tbody>
@@ -1708,7 +1708,7 @@ export function AdminCRM() {
                       <td style={S.td}><span style={{ fontSize:11, fontWeight:700, color:CRM_STATUSES.find(s=>s.id===r.status)?.color||"#aaa" }}>{r.status}</span></td>
                       <td style={{ ...S.td, fontFamily:"monospace", color:r.deposit>0?"#ffc800":C.text3, fontWeight:700 }}>{r.deposit>0?"$"+fmt(r.deposit):"—"}</td>
                       <td style={{ ...S.td, fontFamily:"monospace", color:r.balance>0?C.green:C.text3 }}>{r.balance>0?"$"+fmt(r.balance):"—"}</td>
-                      <td style={{ ...S.td, fontFamily:"monospace", color:C.red3, fontSize:11, fontWeight:700 }}>{r.security_code}</td>
+                      <td style={{ ...S.td, fontFamily:"monospace", color:"#ffc800", fontSize:11, fontWeight:700 }}>{r.security_code}</td>
                       <td style={S.td}>
                         <button style={{ background:"none", border:"none", color:"#555", cursor:"pointer", fontSize:14, padding:"2px 6px" }}
                           onMouseEnter={e=>e.target.style.color="#ef4444"}
@@ -1722,7 +1722,7 @@ export function AdminCRM() {
               </table>
             </div>
             <div style={{ ...S.rowsb, flexWrap:"wrap", gap:10 }}>
-              <span style={{ fontSize:13, color:C.text3 }}>Ready to import <strong style={{ color:C.red3 }}>{importRows.length}</strong> clients</span>
+              <span style={{ fontSize:13, color:C.text3 }}>Ready to import <strong style={{ color:"#ffc800" }}>{importRows.length}</strong> clients</span>
               <div style={S.row}>
                 <button style={{ ...btn("ghost"), padding:"10px 20px" }} onClick={()=>{setShowImport(false);setImportRows([]);}}>Cancel</button>
                 <button style={{ ...btn("success"), padding:"10px 28px", fontSize:14, opacity:importing?.7:1 }} onClick={confirmImport} disabled={importing}>
@@ -1746,7 +1746,7 @@ export function AdminCRM() {
                     style={{ cursor:"pointer", accentColor:"#ffc800", width:15, height:15 }}/>
                 </th>
                 {["NAME","LAST NAME","STATE","NUMBER","EMAIL","STATUS","DEPOSIT","BALANCE","CODE","ACTIONS"].map(h=>(
-                  <th key={h} style={{ ...S.th, background:"rgba(255,200,0,.12)", color:C.red3, fontSize:11, fontWeight:700, letterSpacing:".08em", borderBottom:"2px solid rgba(255,200,0,.3)" }}>{h}</th>
+                  <th key={h} style={{ ...S.th, background:"rgba(255,200,0,.12)", color:"#ffc800", fontSize:11, fontWeight:700, letterSpacing:".08em", borderBottom:"2px solid rgba(255,200,0,.3)" }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -1788,7 +1788,7 @@ export function AdminCRM() {
                     </td>
                     <td style={{ ...S.td }}>
                       <div style={{ display:"flex", alignItems:"center", gap:5 }}>
-                        <span style={{ fontFamily:"monospace", fontSize:12, color:C.red3, fontWeight:700, letterSpacing:1 }}>{c.security_code||"—"}</span>
+                        <span style={{ fontFamily:"monospace", fontSize:12, color:"#ffc800", fontWeight:700, letterSpacing:1 }}>{c.security_code||"—"}</span>
                         {c.security_code && (
                           <button style={{ background:"none", border:"none", cursor:"pointer", color:C.text3, fontSize:11, padding:"1px 4px" }}
                             onClick={()=>{navigator.clipboard?.writeText(c.security_code);showToast("Code copied!","success");}}>📋</button>
@@ -1813,7 +1813,7 @@ export function AdminCRM() {
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"12px 20px", background:"rgba(255,200,0,.06)", borderTop:"1px solid rgba(255,200,0,.15)", flexWrap:"wrap", gap:10 }}>
             <span style={{ fontSize:12, color:C.text3 }}>{filtered.length} of {clients.length} clients shown</span>
             <div style={{ display:"flex", gap:24 }}>
-              <span style={{ fontSize:12, color:C.text3 }}>Deposit: <strong style={{ color:C.red3, fontFamily:"monospace" }}>${fmt(totalDeposited)}</strong></span>
+              <span style={{ fontSize:12, color:C.text3 }}>Deposit: <strong style={{ color:"#ffc800", fontFamily:"monospace" }}>${fmt(totalDeposited)}</strong></span>
               <span style={{ fontSize:12, color:C.text3 }}>Balance: <strong style={{ color:C.green, fontFamily:"monospace" }}>${fmt(totalBalance)}</strong></span>
             </div>
           </div>
