@@ -266,21 +266,21 @@ export function AppProvider({ children }) {
   // ── LOGIN (checks hashed password) ────────────────────────────────────────────
   const loginUser = useCallback((email, password) => {
     // Rate limiting: max 5 attempts per email per 5 minutes
-    const key = email.toLowerCase().trim();
+    const key = email.toLowerCase();
     const now = Date.now();
     if (!loginAttempts.current[key]) loginAttempts.current[key] = { count:0, firstAt:now };
     const att = loginAttempts.current[key];
     if (now - att.firstAt > 5*60*1000) { att.count=0; att.firstAt=now; }
     if (att.count >= 5) return { success:false, error:"Too many attempts. Please wait 5 minutes." };
 
-    const u = users.find(u => (u.email||"").toLowerCase().trim() === key);
-    if (!u) { att.count++; return { success:false, error:"No account found with that email" }; }
+    const u = users.find(u => u.email === email);
+    if (!u) { att.count++; return { success:false, error:"User not found" }; }
 
     // Support both old plain-text passwords (migration) and new hashed ones
     const valid = u.password === password ||         // old plain text (migration)
                   checkPw(password, u.password);     // new hashed
 
-    if (!valid) { att.count++; return { success:false, error:"Incorrect password" }; }
+    if (!valid) { att.count++; return { success:false, error:"Invalid credentials" }; }
 
     att.count = 0; // reset on success
     return { success:true, user:u };
@@ -420,7 +420,7 @@ export function AppProvider({ children }) {
   if (loading) {
     return (
       <div style={{ background:"#0a0a0a", minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16 }}>
-        <div style={{ width:48, height:48, borderRadius:"50%", border:"3px solid rgba(255,200,0,.2)", borderTopColor:"#ffc800", animation:"spin 0.8s linear infinite" }}/>
+        <div style={{ width:48, height:48, borderRadius:"50%", border:"3px solid rgba(255,200,0,.15)", borderTopColor:"#ffc800", animation:"spin 0.8s linear infinite" }}/>
         <div style={{ color:"#555", fontSize:14, fontFamily:"'DM Sans',sans-serif", letterSpacing:".05em" }}>Loading VaultX…</div>
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       </div>
