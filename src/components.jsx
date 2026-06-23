@@ -49,7 +49,7 @@ export const TickerBar = memo(()=>{
         {[...COINS,...COINS,...COINS].map((c,i)=>{
           const p=prices[c.sym],up=(p?.change||0)>=0;
           return(
-            <span key={i} style={{padding:"0 24px",fontSize:12,fontFamily:"monospace",color:up?"#ffc800":C.red}}>
+            <span key={i} style={{padding:"0 24px",fontSize:12,fontFamily:"monospace",color:up?"#30d158":"#e8000d"}}>
               {c.sym}/USD &nbsp;
               <strong>${p?.price<1?p?.price?.toFixed(4):fmt(p?.price)}</strong>
               &nbsp;<span style={{opacity:.65}}>{up?"+":""}{fmt(p?.change)}%</span>
@@ -70,7 +70,7 @@ export const TickerMini = memo(()=>{
         return(
           <div key={c.sym} style={{fontSize:12,color:C.text3,whiteSpace:"nowrap"}}>
             <span style={{color:C.text,fontWeight:700}}>{c.sym}</span>{" "}
-            <span style={{fontFamily:"monospace",color:up?"#ffc800":C.red}}>
+            <span style={{fontFamily:"monospace",color:up?"#30d158":"#e8000d"}}>
               ${p?.price<1?p?.price?.toFixed(4):fmt(p?.price)}
             </span>
           </div>

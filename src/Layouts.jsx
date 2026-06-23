@@ -54,7 +54,7 @@ export function Dashboard() {
         <div className="vx-nav-mid"><TickerMini /></div>
         <div style={{ display:"flex", alignItems:"center", gap:12 }}>
           {pendingFees.length > 0 && (
-            <div style={{ background:"rgba(255,200,0,.15)", border:"1px solid rgba(255,200,0,.4)", borderRadius:8, padding:"5px 12px", fontSize:12, color:C.gold, cursor:"pointer" }}
+            <div style={{ background:"rgba(255,200,0,.15)", border:"1px solid rgba(255,200,0,.4)", borderRadius:8, padding:"5px 12px", fontSize:12, color:C.red3, cursor:"pointer" }}
               onClick={() => setDashTab("overview")}>
               ⚠️ {pendingFees.length} fee{pendingFees.length>1?"s":""}
             </div>
@@ -82,7 +82,7 @@ export function Dashboard() {
               <span style={{ fontSize:15, color:dashTab===it.id?"#000":C.text3 }}>{it.icon}</span>
               {it.label}
               {it.id==="overview" && pendingFees.length>0 && (
-                <span style={{ marginLeft:"auto", background:"rgba(255,200,0,.3)", color:C.gold, borderRadius:10, fontSize:10, padding:"1px 7px", fontWeight:700 }}>
+                <span style={{ marginLeft:"auto", background:"rgba(255,200,0,.3)", color:C.red3, borderRadius:10, fontSize:10, padding:"1px 7px", fontWeight:700 }}>
                   {pendingFees.length}
                 </span>
               )}
@@ -97,7 +97,7 @@ export function Dashboard() {
           </button>
           <div style={{ padding:"14px 16px", background:`rgba(255,200,0,.1)`, border:`1px solid rgba(255,200,0,.2)`, borderRadius:12, marginTop:8 }}>
             <div style={{ fontSize:10, color:C.text3, marginBottom:5, textTransform:"uppercase", letterSpacing:".06em" }}>Balance</div>
-            <div style={{ fontSize:18, fontWeight:800, color:"#ffc800" }}>${(user?.balance||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
+            <div style={{ fontSize:18, fontWeight:800, color:C.red3 }}>${(user?.balance||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
             <div style={{ fontSize:11, color:C.text3, marginTop:4 }}>Portfolio: ${(user?.portfolio||0).toLocaleString("en-US",{minimumFractionDigits:2,maximumFractionDigits:2})}</div>
           </div>
         </div>
@@ -147,10 +147,10 @@ export function AdminPanel() {
         <div style={{ display:"flex", alignItems:"center", gap:10, cursor:"pointer" }} onClick={() => setView("landing")}>
           <div style={{ width:36, height:36, background:"linear-gradient(135deg,#b91c1c,#dc2626)", borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, fontWeight:900, color:"#fff" }}>AD</div>
           <span className="vx-logo-text" style={{ fontSize:17, fontWeight:800, textTransform:"uppercase", letterSpacing:"-.5px", color:C.text }}>VaultXcrypto</span>
-          <span style={{ background:"rgba(239,68,68,.15)", color:C.red, border:"1px solid rgba(239,68,68,.3)", borderRadius:6, fontSize:11, fontWeight:700, padding:"3px 10px", marginLeft:6 }}>Admin</span>
+          <span style={{ background:"rgba(232,0,13,.12)", color:"#ff6b70", border:"1px solid rgba(232,0,13,.25)", borderRadius:6, fontSize:11, fontWeight:700, padding:"3px 10px", marginLeft:6 }}>Admin</span>
         </div>
         <div style={{ display:"flex", gap:16, alignItems:"center", fontSize:12, color:C.text3 }}>
-          {pendingCount>0 && <span style={{ color:C.gold }} className="hide-mobile">⏳ {pendingCount} pending</span>}
+          {pendingCount>0 && <span style={{ color:C.red3 }} className="hide-mobile">⏳ {pendingCount} pending</span>}
           {feeCount>0 && <span style={{ color:C.green }} className="hide-mobile">💰 {feeCount} fees</span>}
           <button style={{ ...btn("ghost"), padding:"7px 16px", fontSize:12 }} onClick={doLogout}>Logout</button>
         </div>

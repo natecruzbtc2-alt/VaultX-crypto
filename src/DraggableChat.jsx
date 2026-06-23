@@ -114,9 +114,9 @@ export default function DraggableChat() {
     <>
       <style>{`
         @keyframes vxChatPulse {
-          0%   { box-shadow: 0 0 0 0 rgba(255,200,0,.6), 0 4px 20px rgba(0,0,0,.4); }
-          70%  { box-shadow: 0 0 0 12px rgba(255,200,0,0), 0 4px 20px rgba(0,0,0,.4); }
-          100% { box-shadow: 0 0 0 0 rgba(255,200,0,0), 0 4px 20px rgba(0,0,0,.4); }
+          0%   { box-shadow: 0 0 0 0 rgba(232,0,13,.6), 0 4px 20px rgba(0,0,0,.4); }
+          70%  { box-shadow: 0 0 0 12px rgba(232,0,13,0), 0 4px 20px rgba(0,0,0,.4); }
+          100% { box-shadow: 0 0 0 0 rgba(232,0,13,0), 0 4px 20px rgba(0,0,0,.4); }
         }
         @keyframes vxChatBounce {
           0%,100% { transform: translateY(0); }
@@ -127,7 +127,7 @@ export default function DraggableChat() {
         }
         .vx-chat-btn:hover {
           animation: none !important;
-          box-shadow: 0 0 0 3px rgba(255,200,0,.4), 0 8px 30px rgba(0,0,0,.5) !important;
+          box-shadow: 0 0 0 3px rgba(232,0,13,.4), 0 8px 30px rgba(0,0,0,.5) !important;
           transform: scale(1.08);
         }
         .vx-chat-icon {

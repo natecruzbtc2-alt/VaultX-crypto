@@ -5,363 +5,396 @@ import { C, S, btn, globalCSS } from "./theme";
 import { TickerBar, Spark } from "./components";
 import CryptoBackground from "./CryptoBackground";
 
-
+// ── NAV ───────────────────────────────────────────────────────────────────────
 function NavBar() {
   const { setView } = useApp();
   return (
     <nav style={S.nav}>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} onClick={() => setView("landing")}>
-        <img src="/logo.png" style={{ width: 36, height: 36, borderRadius: 10, objectFit: "cover" }} alt="VaultX"
-          onError={e => { e.target.style.display = "none"; }} />
-        <span style={{ fontSize: 17, fontWeight: 800, textTransform: "uppercase", letterSpacing: "-.5px", color: C.text }}>VaultXcrypto</span>
+      <div style={S.logo} onClick={() => setView("landing")}>
+        <div style={S.logoMark}>V</div>
+        <span>VaultX</span>
       </div>
-      <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-        <span style={{ fontSize: 13, color: C.text3, cursor: "pointer" }} onClick={() => setView("about")}
-          onMouseEnter={e => e.target.style.color = "#ffc800"} onMouseLeave={e => e.target.style.color = C.text3}>About</span>
-        <span style={{ fontSize: 13, color: C.text3, cursor: "pointer" }} onClick={() => setView("contact")}
-          onMouseEnter={e => e.target.style.color = "#ffc800"} onMouseLeave={e => e.target.style.color = C.text3}>Contact</span>
-        <button style={{ ...btn("ghost"), padding: "7px 16px", fontSize: 13 }} onClick={() => setView("login")}>Sign In</button>
-        <button style={{ ...btn(), padding: "7px 16px", fontSize: 13 }} onClick={() => setView("register")}>Get Started</button>
+      <div style={{ display:"flex", alignItems:"center", gap:8 }} className="hide-mobile">
+        {["about","contact"].map(p => (
+          <button key={p} onClick={() => setView(p)} style={{ background:"none", border:"none", color:C.text2, cursor:"pointer", fontSize:14, padding:"6px 12px", borderRadius:8, fontFamily:"inherit", textTransform:"capitalize", transition:"color .15s" }}
+            onMouseEnter={e=>e.target.style.color="#fff"} onMouseLeave={e=>e.target.style.color=C.text2}>
+            {p.charAt(0).toUpperCase()+p.slice(1)}
+          </button>
+        ))}
+      </div>
+      <div style={S.row}>
+        <button style={{ ...btn("ghost"), padding:"8px 18px", fontSize:13 }} onClick={() => setView("login")}>Sign In</button>
+        <button style={{ ...btn("primary"), padding:"8px 18px", fontSize:13 }} onClick={() => setView("register")}>Get Started</button>
       </div>
     </nav>
   );
 }
 
+// ── LANDING ───────────────────────────────────────────────────────────────────
 export function LandingPage() {
   const { setView } = useApp();
   const prices = usePrices();
 
-  const navigate = (page) => {
-    const pageMap = { trade:"register", portfolio:"register", staking:"register", markets:"register", wallet:"register", about:"about", contact:"contact", privacy:"privacy", terms:"terms", "privacy-policy":"privacy", "terms-of-service":"terms", "cookie-policy":"terms", help:"contact", security:"contact", "fees":"contact", status:"contact" };
-    setView(pageMap[page] || page);
-  };
+  const stats = [
+    { v:"$2.4T",   l:"Market Cap"      },
+    { v:"50K+",    l:"Active Traders"  },
+    { v:"0.10%",   l:"Trading Fee"     },
+    { v:"24/7",    l:"Live Support"    },
+  ];
+
+  const features = [
+    { icon:"📈", t:"Live Trading",     d:"Real-time charts with buy/sell orders, limit & market types across 8 major coins." },
+    { icon:"🔐", t:"Bank-Grade Security", d:"Hashed passwords, rate limiting, anti-phishing codes and encrypted sessions." },
+    { icon:"💼", t:"Portfolio Analytics",  d:"Full P&L tracking, allocation breakdowns and transaction history." },
+    { icon:"⚡", t:"Instant Execution",  d:"Orders execute at market price in milliseconds with 0.10% fee." },
+    { icon:"🌍", t:"Global Access",      d:"Trade from anywhere. Mobile-optimised for iPhone and Android." },
+    { icon:"💬", t:"24/7 Live Support",  d:"Real agents available around the clock via live chat." },
+  ];
+
+  const testimonials = [
+    { name:"James H.",    loc:"London, UK",       text:"VaultX is the cleanest crypto platform I've used. Deposits are instant and the support team is exceptional.", stars:5 },
+    { name:"Sarah M.",    loc:"Toronto, CA",      text:"Made my first trade within 5 minutes of signing up. The interface is incredibly intuitive.", stars:5 },
+    { name:"David K.",    loc:"Sydney, AU",       text:"I've used Coinbase and Binance. VaultX beats them both on simplicity and customer service.", stars:5 },
+  ];
 
   return (
     <div style={{ ...S.app, position:"relative", background:"transparent" }}>
       <CryptoBackground />
-      <div style={{ position:"relative", zIndex:1 }}>
       <style>{globalCSS}</style>
-      <NavBar />
-      <TickerBar />
-      <div style={{ maxWidth: 1140, margin: "0 auto", padding: "clamp(24px, 5vw, 56px) 16px 0" }}>
-        {/* Hero */}
-        <div style={{ textAlign: "center", marginBottom: 56, padding: "0 16px" }}>
-          {/* Trust badge */}
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(255,200,0,.1)", border: "1px solid rgba(255,200,0,.3)", borderRadius: 24, padding: "7px 18px", fontSize: 12, color: "#ffc800", fontWeight: 600, marginBottom: 28, letterSpacing: ".03em" }}>
-            <span style={{ width:7, height:7, borderRadius:"50%", background:"#22c55e", display:"inline-block", boxShadow:"0 0 8px #22c55e" }}/>
-            Live · Real-time prices · UK Registered Company
+      <div style={{ position:"relative", zIndex:1 }}>
+        <NavBar />
+        <TickerBar />
+
+        {/* ── HERO ── */}
+        <section style={{ textAlign:"center", padding:"clamp(80px,10vw,140px) 24px clamp(60px,8vw,100px)", maxWidth:900, margin:"0 auto" }} className="vx-fade">
+
+          {/* Badge */}
+          <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(232,0,13,.08)", border:"1px solid rgba(232,0,13,.2)", borderRadius:24, padding:"7px 18px", fontSize:12, color:C.red3, fontWeight:600, marginBottom:32, letterSpacing:".03em" }}>
+            <span style={{ width:6, height:6, borderRadius:"50%", background:C.green, display:"inline-block", boxShadow:"0 0 8px "+C.green }}/>
+            Live · Real-time prices · UK Regulated · FCA Registered
           </div>
 
-          {/* Main headline */}
-          <h1 style={{ fontSize: "clamp(32px, 5.5vw, 64px)", fontWeight: 900, letterSpacing: "-2px", lineHeight: 1.05, color: "#fff", marginBottom: 22 }}>
-            The smarter way<br />to trade{" "}
-            <span style={{ background: "linear-gradient(135deg,#e6b400,#ffd633,#ffaa00)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-              crypto.
+          {/* H1 */}
+          <h1 style={{ fontSize:"clamp(42px,7vw,88px)", fontWeight:800, letterSpacing:"-3px", lineHeight:1.0, marginBottom:24, color:"#fff" }}>
+            Trade crypto<br/>
+            <span style={{ background:"linear-gradient(135deg,#e8000d,#ff4d55,#ff8085)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text" }}>
+              like a professional.
             </span>
           </h1>
 
           {/* Sub */}
-          <p style={{ color: "#888", fontSize: "clamp(15px, 2vw, 18px)", maxWidth: 560, margin: "0 auto 36px", lineHeight: 1.75 }}>
-            Professional-grade portfolio management, real-time market data and instant transfers — trusted by over <strong style={{ color:"#ccc" }}>50,000 traders</strong> worldwide.
+          <p style={{ fontSize:"clamp(16px,2.5vw,20px)", color:C.text2, maxWidth:580, margin:"0 auto 40px", lineHeight:1.75, fontWeight:400 }}>
+            Real-time markets, portfolio management and instant transfers — the platform serious traders choose.
           </p>
 
-          {/* CTA Buttons */}
-          <div style={{ display: "flex", justifyContent: "center", gap: 14, flexWrap: "wrap", marginBottom: 28 }}>
-            <button style={{ ...btn(), padding: "15px 40px", fontSize: 16, borderRadius: 12, boxShadow:"0 0 40px rgba(255,200,0,.35)" }} onClick={() => setView("register")}>
+          {/* CTAs */}
+          <div style={{ display:"flex", justifyContent:"center", gap:14, flexWrap:"wrap", marginBottom:24 }}>
+            <button style={{ ...btn("primary"), padding:"16px 40px", fontSize:16, borderRadius:14, boxShadow:"0 8px 40px rgba(232,0,13,.4)" }} onClick={() => setView("register")}>
               Open Free Account →
             </button>
-            <button style={{ ...btn("ghost"), padding: "15px 40px", fontSize: 16, borderRadius: 12 }} onClick={() => setView("login")}>
+            <button style={{ ...btn("ghost"), padding:"16px 40px", fontSize:16, borderRadius:14 }} onClick={() => setView("login")}>
               Sign In
             </button>
           </div>
 
-          {/* Trust signals */}
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: 20, flexWrap: "wrap" }}>
-            {[
-              { icon: "🔐", text: "Bank-grade security" },
-              { icon: "⚡", text: "Instant execution" },
-              { icon: "🏢", text: "UK Regulated" },
-              { icon: "💬", text: "24/7 Live support" },
-            ].map((t, i) => (
-              <div key={i} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "#666" }}>
-                <span>{t.icon}</span>
-                <span>{t.text}</span>
+          {/* Trust row */}
+          <div style={{ display:"flex", justifyContent:"center", alignItems:"center", gap:24, flexWrap:"wrap" }}>
+            {["🔒 No hidden fees","⚡ Instant execution","🏢 UK Regulated","💬 24/7 Support"].map((t,i) => (
+              <span key={i} style={{ fontSize:13, color:C.text3, display:"flex", alignItems:"center", gap:5 }}>{t}</span>
+            ))}
+          </div>
+        </section>
+
+        {/* ── STATS ── */}
+        <section style={{ borderTop:"1px solid rgba(255,255,255,.05)", borderBottom:"1px solid rgba(255,255,255,.05)", background:"rgba(255,255,255,.015)", backdropFilter:"blur(20px)" }}>
+          <div style={{ maxWidth:900, margin:"0 auto", display:"grid", gridTemplateColumns:"repeat(4,1fr)", padding:"0" }}>
+            {stats.map((s,i) => (
+              <div key={i} style={{ textAlign:"center", padding:"32px 20px", borderRight:i<3?"1px solid rgba(255,255,255,.05)":"none" }}>
+                <div style={{ fontSize:"clamp(28px,4vw,40px)", fontWeight:800, color:"#fff", letterSpacing:"-1px", marginBottom:6 }}>{s.v}</div>
+                <div style={{ fontSize:13, color:C.text3, fontWeight:500 }}>{s.l}</div>
               </div>
             ))}
           </div>
-        </div>
+        </section>
 
-        {/* Stats */}
-        <div style={{ ...S.card, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 0, marginBottom: 40, padding: 0, overflow: "hidden" }}>
-          {[["$2.4T", "Total Market Cap"], ["$94B", "24h Volume"], ["50,000+", "Active Traders"], ["0.10%", "Trading Fee"]].map(([v, l], i) => (
-            <div key={i} style={{ padding: "22px 28px", borderRight: i < 3 ? `1px solid ${C.border2}` : "none" }}>
-              <div style={{ fontSize: 26, fontWeight: 700, color: "#ffc800" }}>{v}</div>
-              <div style={{ fontSize: 12, color: C.text3, marginTop: 4 }}>{l}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Coin cards */}
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(220px, 1fr))", gap:14, marginBottom: 40 }}>
-          {COINS.slice(0, 4).map(coin => {
-            const p = prices[coin.sym], up = p.change >= 0;
-            return (
-              <div key={coin.sym} style={{ ...S.card, position: "relative", overflow: "hidden", cursor: "pointer" }} onClick={() => setView("register")}>
-                <div style={{ position: "absolute", inset: 0, background: `radial-gradient(ellipse at top right,${coin.color}12,transparent)`, pointerEvents: "none" }} />
-                <div style={S.rowsb}>
-                  <div style={S.row}>
-                    <div style={{ width: 34, height: 34, borderRadius: "50%", background: coin.bg, border: `1px solid ${coin.color}55`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 9, fontWeight: 800, color: coin.color }}>{coin.sym.slice(0, 3)}</div>
+        {/* ── LIVE PRICES ── */}
+        <section style={{ maxWidth:1100, margin:"80px auto", padding:"0 24px" }}>
+          <div style={{ textAlign:"center", marginBottom:48 }}>
+            <h2 style={{ fontSize:"clamp(28px,4vw,44px)", fontWeight:800, letterSpacing:"-1.5px", color:"#fff", marginBottom:12 }}>Live Markets</h2>
+            <p style={{ fontSize:16, color:C.text2 }}>Prices update every 2.5 seconds</p>
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))", gap:12 }}>
+            {COINS.slice(0,8).map(coin => {
+              const p = prices[coin.sym] || { price:0, change:0, spark:[] };
+              const up = p.change >= 0;
+              return (
+                <div key={coin.sym} style={{ ...S.card, cursor:"pointer", transition:"all .2s", border:"1px solid rgba(255,255,255,.06)" }}
+                  onClick={() => setView("register")}
+                  onMouseEnter={e=>e.currentTarget.style.borderColor="rgba(232,0,13,.3)"}
+                  onMouseLeave={e=>e.currentTarget.style.borderColor="rgba(255,255,255,.06)"}>
+                  <div style={{ ...S.rowsb, marginBottom:12 }}>
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: 14, color: C.text }}>{coin.sym}</div>
-                      <div style={{ fontSize: 11, color: C.text3 }}>{coin.name}</div>
+                      <div style={{ fontWeight:700, fontSize:15, color:"#fff" }}>{coin.sym}</div>
+                      <div style={{ fontSize:11, color:C.text3 }}>{coin.name}</div>
                     </div>
+                    <span style={{ ...S.tag(up?"green":"red"), fontSize:11 }}>{up?"+":""}{fmt(p.change)}%</span>
                   </div>
-                  <span style={S.tag(up ? "green" : "red")}>{up ? "+" : ""}{fmt(p.change)}%</span>
+                  <div style={{ fontSize:20, fontWeight:700, color:"#fff", marginBottom:10, fontVariantNumeric:"tabular-nums" }}>
+                    ${p.price<1?p.price.toFixed(4):fmt(p.price)}
+                  </div>
+                  <Spark data={p.spark} color={up?C.red3:"#555"} w={140} h={36}/>
                 </div>
-                <div style={{ marginTop: 16 }}>
-                  <div style={{ fontSize: 22, fontWeight: 700, color: C.text }}>${p.price < 1 ? p.price.toFixed(4) : fmt(p.price)}</div>
-                  <div style={{ marginTop: 10 }}><Spark data={p.spark} color={up ? '#ffc800' : C.red} /></div>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* ── FEATURES ── */}
+        <section style={{ maxWidth:1100, margin:"80px auto", padding:"0 24px" }}>
+          <div style={{ textAlign:"center", marginBottom:56 }}>
+            <h2 style={{ fontSize:"clamp(28px,4vw,44px)", fontWeight:800, letterSpacing:"-1.5px", color:"#fff", marginBottom:12 }}>Everything you need</h2>
+            <p style={{ fontSize:16, color:C.text2, maxWidth:500, margin:"0 auto" }}>Built for traders who demand speed, reliability and clarity.</p>
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(300px,1fr))", gap:16 }}>
+            {features.map((f,i) => (
+              <div key={i} style={{ ...S.card, transition:"all .2s" }}
+                onMouseEnter={e=>{e.currentTarget.style.borderColor="rgba(232,0,13,.2)";e.currentTarget.style.background="rgba(232,0,13,.03)";}}
+                onMouseLeave={e=>{e.currentTarget.style.borderColor="rgba(255,255,255,.07)";e.currentTarget.style.background="rgba(255,255,255,.03)";}}>
+                <div style={{ fontSize:28, marginBottom:14 }}>{f.icon}</div>
+                <div style={{ fontSize:16, fontWeight:700, color:"#fff", marginBottom:8, letterSpacing:"-.3px" }}>{f.t}</div>
+                <div style={{ fontSize:14, color:C.text2, lineHeight:1.7 }}>{f.d}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── TESTIMONIALS ── */}
+        <section style={{ maxWidth:1100, margin:"80px auto", padding:"0 24px" }}>
+          <div style={{ textAlign:"center", marginBottom:48 }}>
+            <h2 style={{ fontSize:"clamp(28px,4vw,44px)", fontWeight:800, letterSpacing:"-1.5px", color:"#fff", marginBottom:12 }}>Trusted by traders worldwide</h2>
+            <p style={{ fontSize:16, color:C.text2 }}>Join 50,000+ traders who chose VaultX</p>
+          </div>
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))", gap:16 }}>
+            {testimonials.map((t,i) => (
+              <div key={i} style={{ ...S.card }}>
+                <div style={{ display:"flex", gap:3, marginBottom:14 }}>
+                  {"★★★★★".split("").map((s,j) => <span key={j} style={{ color:"#ffd60a", fontSize:16 }}>{s}</span>)}
+                </div>
+                <p style={{ fontSize:14, color:C.text2, lineHeight:1.75, marginBottom:16, fontStyle:"italic" }}>"{t.text}"</p>
+                <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                  <div style={{ width:36, height:36, borderRadius:"50%", background:"linear-gradient(135deg,#e8000d,#ff4d55)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, fontWeight:700, color:"#fff" }}>
+                    {t.name.charAt(0)}
+                  </div>
+                  <div>
+                    <div style={{ fontSize:14, fontWeight:600, color:"#fff" }}>{t.name}</div>
+                    <div style={{ fontSize:12, color:C.text3 }}>{t.loc}</div>
+                  </div>
                 </div>
               </div>
-            );
-          })}
-        </div>
-
-        {/* Market table */}
-        <div style={{ ...S.card, marginBottom: 40 }}>
-          <div style={{ ...S.rowsb, marginBottom: 18 }}>
-            <span style={{ fontSize: 17, fontWeight: 700, color: C.text }}>Live Market</span>
-            <span style={{ fontSize: 12, color: C.text3 }}><span style={S.ldot} />Auto-refresh every 2.5s</span>
+            ))}
           </div>
-          <div style={{ overflowX: "auto" }}>
-            <table style={S.tbl}>
-              <thead><tr>{["#", "Asset", "Price", "24h Change", "Market Cap", "Volume", "7D Chart", ""].map((h, i) => <th key={i} style={S.th}>{h}</th>)}</tr></thead>
-              <tbody>
-                {COINS.map((coin, i) => {
-                  const p = prices[coin.sym], up = p.change >= 0;
-                  return (
-                    <tr key={coin.sym}>
-                      <td style={S.td}><span style={{ color: C.text3, fontWeight: 600 }}>{i + 1}</span></td>
-                      <td style={S.td}>
-                        <div style={S.row}>
-                          <div style={{ width: 28, height: 28, borderRadius: "50%", background: coin.bg, border: `1px solid ${coin.color}55`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 8, fontWeight: 800, color: coin.color }}>{coin.sym.slice(0, 3)}</div>
-                          <div><div style={{ fontWeight: 700, color: C.text }}>{coin.sym}</div><div style={{ fontSize: 11, color: C.text3 }}>{coin.name}</div></div>
-                        </div>
-                      </td>
-                      <td style={{ ...S.td, fontWeight: 700, color: C.text, fontFamily: "monospace" }}>${p.price < 1 ? p.price.toFixed(4) : fmt(p.price)}</td>
-                      <td style={S.td}><span style={{ color: up ? C.green : C.red, fontWeight: 600 }}>{up ? "+" : ""}{fmt(p.change)}%</span></td>
-                      <td style={{ ...S.td, fontFamily: "monospace" }}>${fmt(p.price * 19000000 / 1e9, 1)}B</td>
-                      <td style={{ ...S.td, fontFamily: "monospace" }}>${fmt(p.price * 210000 / 1e6, 1)}M</td>
-                      <td style={S.td}><Spark data={p.spark} color={up ? '#ffc800' : C.red} w={80} h={28} /></td>
-                      <td style={S.td}><button style={{ ...btn(), padding: "6px 16px", fontSize: 12 }} onClick={() => setView("register")}>Trade</button></td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        </section>
 
-        {/* Features */}
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit, minmax(220px, 1fr))", gap:14, marginBottom: 0 }}>
-          {[
-            { icon: "🔐", t: "Bank-Grade Security", d: "Multi-sig wallets, cold storage, 2FA and insurance backed vaults protect your assets." },
-            { icon: "⚡", t: "Instant Settlements", d: "Sub-second trades with deep liquidity across 200+ trading pairs worldwide." },
-            { icon: "📈", t: "Staking & Yield", d: "Earn up to 18% APY by staking your idle crypto assets with flexible terms." },
-            { icon: "💸", t: "Ultra-Low Fees", d: "Industry-lowest trading fees starting at just 0.10% per trade with no hidden costs." },
-            { icon: "📊", t: "Advanced Analytics", d: "Real-time charts, portfolio tracking, profit/loss reports and tax summaries." },
-            { icon: "🌍", t: "Global Transfers", d: "Send crypto anywhere in the world in seconds with minimal network fees." },
-          ].map((f, i) => (
-            <div key={i} style={{ ...S.scard, marginBottom: 16 }}>
-              <div style={{ fontSize: 30, marginBottom: 12 }}>{f.icon}</div>
-              <div style={{ fontWeight: 700, color: C.text, marginBottom: 8, fontSize: 15 }}>{f.t}</div>
-              <div style={{ fontSize: 13, color: C.text3, lineHeight: 1.7 }}>{f.d}</div>
+        {/* ── BOTTOM CTA ── */}
+        <section style={{ maxWidth:800, margin:"80px auto 100px", padding:"0 24px", textAlign:"center" }}>
+          <div style={{ background:"linear-gradient(135deg,rgba(232,0,13,.08),rgba(232,0,13,.03))", border:"1px solid rgba(232,0,13,.15)", borderRadius:28, padding:"clamp(40px,6vw,72px) clamp(24px,5vw,72px)" }}>
+            <h2 style={{ fontSize:"clamp(28px,5vw,52px)", fontWeight:800, letterSpacing:"-2px", color:"#fff", marginBottom:16, lineHeight:1.1 }}>
+              Start trading today.<br/>
+              <span style={{ background:"linear-gradient(135deg,#e8000d,#ff4d55)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent" }}>It's free.</span>
+            </h2>
+            <p style={{ fontSize:16, color:C.text2, marginBottom:36, lineHeight:1.7 }}>Open your account in 60 seconds. No hidden fees, no minimum deposit.</p>
+            <div style={{ display:"flex", justifyContent:"center", gap:14, flexWrap:"wrap" }}>
+              <button style={{ ...btn("primary"), padding:"16px 44px", fontSize:16, borderRadius:14, boxShadow:"0 8px 40px rgba(232,0,13,.4)" }} onClick={() => setView("register")}>
+                Open Free Account →
+              </button>
+              <button style={{ ...btn("ghost"), padding:"16px 32px", fontSize:16, borderRadius:14 }} onClick={() => setView("login")}>
+                Sign In
+              </button>
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
+        </section>
 
-      {/* Footer */}
-      <Footer />
-
+        <Footer />
       </div>
     </div>
   );
 }
 
+// ── LOGIN ─────────────────────────────────────────────────────────────────────
 export function LoginPage() {
   const { setView, showToast, showAlert, alert, setUser, setDashTab, loginUser, checkAdminCreds } = useApp();
-  const [email,     setEmail]     = useState("");
-  const [password,  setPassword]  = useState("");
-  const [adminMode, setAdminMode] = useState(false);
+  const [email,    setEmail]    = useState("");
+  const [password, setPassword] = useState("");
+  const [showPw,   setShowPw]   = useState(false);
   const [adminUser, setAdminUser] = useState("");
   const [adminPw,   setAdminPw]   = useState("");
+  const [tab, setTab] = useState("client");
 
   const doLogin = useCallback(() => {
     if (!email || !password) { showAlert("Fill in all fields"); return; }
     const result = loginUser(email, password);
     if (!result.success) { showAlert(result.error); return; }
-    setUser(result.user);
-    setView("dashboard");
-    setDashTab("overview");
+    setUser(result.user); setView("dashboard"); setDashTab("overview");
     showToast("Welcome back, " + result.user.name.split(" ")[0] + "! 👋", "success");
   }, [email, password, loginUser, showAlert, showToast, setUser, setView, setDashTab]);
 
   const doAdminLogin = useCallback(() => {
-    if (!checkAdminCreds(adminUser, adminPw)) {
-      showAlert("Invalid admin credentials"); return;
-    }
-    setView("admin");
-    showToast("Admin panel loaded", "success");
-  }, [adminUser, adminPw, showAlert, showToast, setView]);
+    if (!checkAdminCreds(adminUser, adminPw)) { showAlert("Invalid admin credentials"); return; }
+    setView("admin"); showToast("Admin panel loaded", "success");
+  }, [adminUser, adminPw, checkAdminCreds, showAlert, showToast, setView]);
 
   return (
     <div style={{ ...S.app, position:"relative", background:"transparent" }}>
       <CryptoBackground />
-      <div style={{ position:"relative", zIndex:1 }}>
       <style>{globalCSS}</style>
-      <nav style={S.nav}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} onClick={() => setView("landing")}>
-          <img src="/logo.png" style={{ width: 36, height: 36, borderRadius: 10, objectFit: "cover" }} alt="VaultX" onError={e => { e.target.style.display = "none"; }} />
-          <span style={{ fontSize: 17, fontWeight: 800, textTransform: "uppercase", letterSpacing: "-.5px", color: C.text }}>VaultXcrypto</span>
+      <div style={{ position:"relative", zIndex:1, minHeight:"100vh", display:"flex", flexDirection:"column" }}>
+        <NavBar />
+        <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", padding:"40px 20px" }}>
+          <div style={{ width:"min(420px,100%)" }} className="vx-fade">
+
+            {/* Logo */}
+            <div style={{ textAlign:"center", marginBottom:32 }}>
+              <div style={{ ...S.logoMark, width:52, height:52, borderRadius:14, margin:"0 auto 14px", fontSize:22 }}>V</div>
+              <h1 style={{ fontSize:24, fontWeight:700, letterSpacing:"-.5px", marginBottom:6 }}>Sign in to VaultX</h1>
+              <p style={{ fontSize:14, color:C.text3 }}>Enter your credentials to continue</p>
+            </div>
+
+            {/* Tab switcher */}
+            <div style={{ display:"flex", background:"rgba(255,255,255,.04)", borderRadius:12, padding:4, marginBottom:24, border:"1px solid rgba(255,255,255,.06)" }}>
+              {["client","admin"].map(t => (
+                <button key={t} onClick={() => setTab(t)} style={{ flex:1, padding:"9px", border:"none", borderRadius:9, cursor:"pointer", fontFamily:"inherit", fontSize:13, fontWeight:600, transition:"all .15s",
+                  background: tab===t ? "rgba(255,255,255,.08)" : "transparent",
+                  color: tab===t ? "#fff" : C.text3 }}>
+                  {t==="client" ? "Client" : "Admin"}
+                </button>
+              ))}
+            </div>
+
+            {/* Alert */}
+            {alert && <div style={{ background:"rgba(232,0,13,.1)", border:"1px solid rgba(232,0,13,.25)", borderRadius:12, padding:"10px 14px", fontSize:13, color:"#ff6b70", marginBottom:16 }}>{alert}</div>}
+
+            {/* Form */}
+            <div style={{ background:"rgba(255,255,255,.03)", border:"1px solid rgba(255,255,255,.07)", borderRadius:20, padding:28 }}>
+              {tab === "client" ? (
+                <>
+                  <div style={{ marginBottom:16 }}>
+                    <label style={S.label}>Email address</label>
+                    <input style={S.inp} type="email" placeholder="you@example.com" value={email} onChange={e=>setEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&doLogin()} autoFocus/>
+                  </div>
+                  <div style={{ marginBottom:24 }}>
+                    <label style={S.label}>Password</label>
+                    <div style={{ position:"relative" }}>
+                      <input style={{ ...S.inp, paddingRight:44 }} type={showPw?"text":"password"} placeholder="••••••••" value={password} onChange={e=>setPassword(e.target.value)} onKeyDown={e=>e.key==="Enter"&&doLogin()}/>
+                      <button onClick={() => setShowPw(!showPw)} style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", color:C.text3, fontSize:16, padding:4 }}>
+                        {showPw?"🙈":"👁"}
+                      </button>
+                    </div>
+                  </div>
+                  <button style={{ ...btn("primary"), width:"100%", padding:"13px", fontSize:15 }} onClick={doLogin}>Sign In →</button>
+                  <div style={{ textAlign:"center", marginTop:18, fontSize:13, color:C.text3 }}>
+                    Don't have an account?{" "}
+                    <span style={{ color:C.red3, cursor:"pointer", fontWeight:600 }} onClick={() => setView("register")}>Create one</span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div style={{ marginBottom:16 }}>
+                    <label style={S.label}>Admin Username</label>
+                    <input style={S.inp} placeholder="admin" value={adminUser} onChange={e=>setAdminUser(e.target.value)} onKeyDown={e=>e.key==="Enter"&&doAdminLogin()}/>
+                  </div>
+                  <div style={{ marginBottom:24 }}>
+                    <label style={S.label}>Admin Password</label>
+                    <input style={S.inp} type="password" placeholder="••••••••" value={adminPw} onChange={e=>setAdminPw(e.target.value)} onKeyDown={e=>e.key==="Enter"&&doAdminLogin()}/>
+                  </div>
+                  <button style={{ ...btn("primary"), width:"100%", padding:"13px", fontSize:15 }} onClick={doAdminLogin}>Access Admin Panel →</button>
+                </>
+              )}
+            </div>
+          </div>
         </div>
-      </nav>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "calc(100vh - 60px)", padding: 24 }}>
-        <div style={S.authBox}>
-          {!adminMode ? (
-            <>
-              <div style={{ fontSize: 26, fontWeight: 800, marginBottom: 6, color: C.text }}>Welcome back</div>
-              <div style={{ fontSize: 14, color: C.text3, marginBottom: 28 }}>Sign in to your VaultX account</div>
-              {alert && <div style={{ background: "rgba(239,68,68,.1)", border: "1px solid rgba(239,68,68,.3)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: C.red, marginBottom: 16 }}>{alert}</div>}
-              <div style={{ marginBottom: 16 }}>
-                <label style={S.label}>Email Address</label>
-                <input type="email" autoComplete="email" style={S.inp} placeholder="you@email.com" value={email} onChange={e => setEmail(e.target.value)} onKeyDown={e => e.key === "Enter" && doLogin()} />
-              </div>
-              <div style={{ marginBottom: 24 }}>
-                <label style={S.label}>Password</label>
-                <input type="password" autoComplete="current-password" style={S.inp} placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} onKeyDown={e => e.key === "Enter" && doLogin()} />
-              </div>
-              <button style={{ ...btn(), width: "100%", padding: "13px", fontSize: 15 }} onClick={doLogin}>Sign In →</button>
-              <div style={{ textAlign: "center", fontSize: 13, color: C.text3, marginTop: 20 }}>
-                No account?{" "}<span style={{ color: "#ffc800", cursor: "pointer", fontWeight: 600 }} onClick={() => setView("register")}>Create one free</span>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", marginTop: 14 }}>
-                <span style={{ fontSize: 12, color: C.text3, cursor: "pointer" }} onClick={() => setView("contact")}>Forgot password?</span>
-                <span style={{ fontSize: 12, color: C.text3, cursor: "pointer", textDecoration: "underline" }} onClick={() => setAdminMode(true)}>Admin access</span>
-              </div>
-            </>
-          ) : (
-            <>
-              <div style={{ fontSize: 26, fontWeight: 800, marginBottom: 6, color: C.text }}>Admin Access</div>
-              <div style={{ fontSize: 14, color: C.text3, marginBottom: 28 }}>Enter your admin credentials</div>
-              {alert && <div style={{ background: "rgba(239,68,68,.1)", border: "1px solid rgba(239,68,68,.3)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: C.red, marginBottom: 16 }}>{alert}</div>}
-              <div style={{ marginBottom: 16 }}>
-                <label style={S.label}>Username</label>
-                <input type="text" autoComplete="username" style={S.inp} placeholder="admin" value={adminUser} onChange={e => setAdminUser(e.target.value)} onKeyDown={e => e.key === "Enter" && doAdminLogin()} />
-              </div>
-              <div style={{ marginBottom: 24 }}>
-                <label style={S.label}>Password</label>
-                <input type="password" autoComplete="current-password" style={S.inp} placeholder="••••••••" value={adminPw} onChange={e => setAdminPw(e.target.value)} onKeyDown={e => e.key === "Enter" && doAdminLogin()} />
-              </div>
-              <button style={{ ...btn(), width: "100%", padding: "13px", fontSize: 15 }} onClick={doAdminLogin}>Admin Sign In →</button>
-              <div style={{ textAlign: "center", marginTop: 16 }}>
-                <span style={{ fontSize: 12, color: C.text3, cursor: "pointer", textDecoration: "underline" }} onClick={() => setAdminMode(false)}>← Back to user login</span>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
       </div>
     </div>
   );
 }
 
+// ── REGISTER ──────────────────────────────────────────────────────────────────
 export function RegisterPage() {
   const { setView, users, registerUser, showToast, showAlert, alert } = useApp();
-  const [name,     setName]     = useState("");
-  const [email,    setEmail]    = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm,  setConfirm]  = useState("");
-  const [agreed,   setAgreed]   = useState(false);
-  const [saving,   setSaving]   = useState(false);
+  const [name,    setName]    = useState("");
+  const [email,   setEmail]   = useState("");
+  const [password,setPassword]= useState("");
+  const [confirm, setConfirm] = useState("");
+  const [showPw,  setShowPw]  = useState(false);
+  const [agreed,  setAgreed]  = useState(false);
+  const [saving,  setSaving]  = useState(false);
 
   const doRegister = useCallback(async () => {
     if (!name || !email || !password || !confirm) { showAlert("All fields required"); return; }
     if (password !== confirm) { showAlert("Passwords don't match"); return; }
     if (password.length < 6) { showAlert("Password must be at least 6 characters"); return; }
-    if (!agreed) { showAlert("Please accept the Terms of Service to continue"); return; }
+    if (!agreed) { showAlert("Please accept the Terms of Service"); return; }
     if (users.some(u => u.email === email)) { showAlert("Email already registered"); return; }
     setSaving(true);
-    const nu = {
-      id: `U${String(users.length + 1).padStart(4, "0")}`,
-      name, email, rawPassword: password,
-      balance: 0, portfolio: 0,
-      holdings: createHoldings(0),
-      staking: createStaking(0),
-      joined: new Date().toLocaleDateString(),
-      verified: true, status: "Active", tier: "Basic",
-    };
+    const nu = { id:`U${String(users.length+1).padStart(4,"0")}`, name, email, rawPassword:password, balance:0, portfolio:0, holdings:createHoldings(0), staking:createStaking(0), joined:new Date().toLocaleDateString(), verified:true, status:"Active", tier:"Basic" };
     const result = await registerUser(nu);
     setSaving(false);
-    if (result.success) {
-      showToast("Account created! Please sign in.", "success");
-      setView("login");
-    } else {
-      showAlert("Registration failed. Please try again.");
-    }
+    if (result.success) { showToast("Account created! Please sign in.", "success"); setView("login"); }
+    else showAlert("Registration failed. Please try again.");
   }, [name, email, password, confirm, agreed, users, registerUser, showAlert, showToast, setView]);
 
   return (
     <div style={{ ...S.app, position:"relative", background:"transparent" }}>
       <CryptoBackground />
-      <div style={{ position:"relative", zIndex:1 }}>
       <style>{globalCSS}</style>
-      <nav style={S.nav}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer" }} onClick={() => setView("landing")}>
-          <img src="/logo.png" style={{ width: 36, height: 36, borderRadius: 10, objectFit: "cover" }} alt="VaultX" onError={e => { e.target.style.display = "none"; }} />
-          <span style={{ fontSize: 17, fontWeight: 800, textTransform: "uppercase", letterSpacing: "-.5px", color: C.text }}>VaultXcrypto</span>
+      <div style={{ position:"relative", zIndex:1, minHeight:"100vh", display:"flex", flexDirection:"column" }}>
+        <NavBar />
+        <div style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"center", padding:"40px 20px" }}>
+          <div style={{ width:"min(440px,100%)" }} className="vx-fade">
+
+            <div style={{ textAlign:"center", marginBottom:32 }}>
+              <div style={{ ...S.logoMark, width:52, height:52, borderRadius:14, margin:"0 auto 14px", fontSize:22 }}>V</div>
+              <h1 style={{ fontSize:24, fontWeight:700, letterSpacing:"-.5px", marginBottom:6 }}>Create your account</h1>
+              <p style={{ fontSize:14, color:C.text3 }}>Start trading in under 60 seconds</p>
+            </div>
+
+            {alert && <div style={{ background:"rgba(232,0,13,.1)", border:"1px solid rgba(232,0,13,.25)", borderRadius:12, padding:"10px 14px", fontSize:13, color:"#ff6b70", marginBottom:16 }}>{alert}</div>}
+
+            <div style={{ background:"rgba(255,255,255,.03)", border:"1px solid rgba(255,255,255,.07)", borderRadius:20, padding:28 }}>
+              <div style={{ marginBottom:16 }}>
+                <label style={S.label}>Full Name</label>
+                <input style={S.inp} placeholder="John Smith" value={name} onChange={e=>setName(e.target.value)} autoFocus/>
+              </div>
+              <div style={{ marginBottom:16 }}>
+                <label style={S.label}>Email address</label>
+                <input style={S.inp} type="email" placeholder="you@example.com" value={email} onChange={e=>setEmail(e.target.value)}/>
+              </div>
+              <div style={{ marginBottom:16 }}>
+                <label style={S.label}>Password</label>
+                <div style={{ position:"relative" }}>
+                  <input style={{ ...S.inp, paddingRight:44 }} type={showPw?"text":"password"} placeholder="Min. 6 characters" value={password} onChange={e=>setPassword(e.target.value)}/>
+                  <button onClick={()=>setShowPw(!showPw)} style={{ position:"absolute", right:12, top:"50%", transform:"translateY(-50%)", background:"none", border:"none", cursor:"pointer", color:C.text3, fontSize:16, padding:4 }}>
+                    {showPw?"🙈":"👁"}
+                  </button>
+                </div>
+              </div>
+              <div style={{ marginBottom:20 }}>
+                <label style={S.label}>Confirm Password</label>
+                <input style={S.inp} type="password" placeholder="Repeat password" value={confirm} onChange={e=>setConfirm(e.target.value)} onKeyDown={e=>e.key==="Enter"&&doRegister()}/>
+              </div>
+              <div style={{ display:"flex", alignItems:"flex-start", gap:10, marginBottom:24, fontSize:13, color:C.text2 }}>
+                <input type="checkbox" checked={agreed} onChange={e=>setAgreed(e.target.checked)} style={{ marginTop:2, accentColor:C.red, flexShrink:0 }}/>
+                <span>I agree to the{" "}<span style={{ color:C.red3, cursor:"pointer" }} onClick={()=>setView("terms")}>Terms of Service</span>{" "}and{" "}<span style={{ color:C.red3, cursor:"pointer" }} onClick={()=>setView("privacy")}>Privacy Policy</span></span>
+              </div>
+              <button style={{ ...btn("primary"), width:"100%", padding:"13px", fontSize:15, opacity:saving?.7:1 }} onClick={doRegister} disabled={saving}>
+                {saving?"Creating Account…":"Create Free Account →"}
+              </button>
+              <div style={{ textAlign:"center", marginTop:18, fontSize:13, color:C.text3 }}>
+                Already have an account?{" "}
+                <span style={{ color:C.red3, cursor:"pointer", fontWeight:600 }} onClick={()=>setView("login")}>Sign in</span>
+              </div>
+            </div>
+          </div>
         </div>
-      </nav>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "calc(100vh - 60px)", padding: 24 }}>
-        <div style={S.authBox}>
-          <div style={{ fontSize: 26, fontWeight: 800, marginBottom: 6, color: C.text }}>Create your account</div>
-          <div style={{ fontSize: 14, color: C.text3, marginBottom: 28 }}>Join VaultXcrypto — elite crypto platform</div>
-          {alert && <div style={{ background: "rgba(239,68,68,.1)", border: "1px solid rgba(239,68,68,.3)", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: C.red, marginBottom: 16 }}>{alert}</div>}
-          <div style={{ marginBottom: 14 }}>
-            <label style={S.label}>Full Name</label>
-            <input type="text" autoComplete="name" style={S.inp} placeholder="John Smith" value={name} onChange={e => setName(e.target.value)} />
-          </div>
-          <div style={{ marginBottom: 14 }}>
-            <label style={S.label}>Email Address</label>
-            <input type="email" autoComplete="email" style={S.inp} placeholder="you@email.com" value={email} onChange={e => setEmail(e.target.value)} />
-          </div>
-          <div style={{ marginBottom: 14 }}>
-            <label style={S.label}>Password</label>
-            <input type="password" autoComplete="new-password" style={S.inp} placeholder="Min 6 characters" value={password} onChange={e => setPassword(e.target.value)} />
-          </div>
-          <div style={{ marginBottom: 20 }}>
-            <label style={S.label}>Confirm Password</label>
-            <input type="password" autoComplete="new-password" style={S.inp} placeholder="Repeat password" value={confirm} onChange={e => setConfirm(e.target.value)} onKeyDown={e => e.key === "Enter" && doRegister()} />
-          </div>
-          {/* Terms checkbox */}
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 10, marginBottom: 24 }}>
-            <input type="checkbox" id="terms" checked={agreed} onChange={e => setAgreed(e.target.checked)} style={{ marginTop: 2, accentColor: "#ffc800", width: 16, height: 16, flexShrink: 0 }} />
-            <label htmlFor="terms" style={{ fontSize: 13, color: C.text3, lineHeight: 1.6, cursor: "pointer" }}>
-              I agree to the{" "}
-              <span style={{ color: "#ffc800", cursor: "pointer" }} onClick={() => setView("terms")}>Terms of Service</span>
-              {" "}and{" "}
-              <span style={{ color: "#ffc800", cursor: "pointer" }} onClick={() => setView("privacy")}>Privacy Policy</span>
-              . I confirm I am 18+ years old.
-            </label>
-          </div>
-          <button style={{ ...btn(), width: "100%", padding: "13px", fontSize: 15, opacity: saving ? .7 : 1 }} onClick={doRegister} disabled={saving}>
-            {saving ? "Creating Account…" : "Create Account →"}
-          </button>
-          <div style={{ textAlign: "center", fontSize: 13, color: C.text3, marginTop: 20 }}>
-            Already have an account?{" "}<span style={{ color: "#ffc800", cursor: "pointer", fontWeight: 600 }} onClick={() => setView("login")}>Sign in</span>
-          </div>
-        </div>
-      </div>
       </div>
     </div>
   );

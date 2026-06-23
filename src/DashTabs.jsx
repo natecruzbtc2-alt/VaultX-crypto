@@ -77,7 +77,7 @@ export function DashOverview() {
       {wallet && (
         <div style={{ background:"rgba(255,200,0,.06)", border:`1px solid rgba(255,200,0,.25)`, borderRadius:12, padding:"14px 18px", marginBottom:20, display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:12 }}>
           <div>
-            <div style={{ fontWeight:700, color:"#ffc800", fontSize:14 }}>💰 Deposit Address Ready</div>
+            <div style={{ fontWeight:700, color:C.red3, fontSize:14 }}>💰 Deposit Address Ready</div>
             <div style={{ fontSize:13, color:C.text2, marginTop:4 }}>Your {wallet.coin} deposit address has been assigned.</div>
           </div>
           <button style={{ ...btn(), padding:"9px 20px" }} onClick={() => setModal("deposit")}>View Address</button>
@@ -148,7 +148,7 @@ export function DashOverview() {
             {side==="buy" ? `Buy ${coin}` : `Sell ${coin}`}
           </button>
           <div style={{ marginTop:10, textAlign:"center" }}>
-            <span style={{ fontSize:12, color:"#ffc800", cursor:"pointer" }} onClick={() => setDashTab("trade")}>
+            <span style={{ fontSize:12, color:C.red3, cursor:"pointer" }} onClick={() => setDashTab("trade")}>
               Advanced trading chart →
             </span>
           </div>
@@ -282,7 +282,7 @@ export function DashTrading() {
     }
 
     const up = data[data.length-1] >= data[0];
-    const lineColor = up ? "#22c55e" : "#ef4444";
+    const lineColor = up ? "#30d158" : "#e8000d";
 
     if (chartType === "candle") {
       // Candlestick chart

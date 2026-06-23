@@ -185,7 +185,7 @@ export function AboutPage() {
               ["Founded","2022"],
               ["Support Email","support@vaultx-crypto.com"],
             ].map(([label,value]) => (
-              <div key={label} style={{ padding:"12px 16px", background:`rgba(138,43,226,.04)`, borderRadius:10 }}>
+              <div key={label} style={{ padding:"12px 16px", background:`rgba(255,200,0,.04)`, borderRadius:10 }}>
                 <div style={{ fontSize:11, color:C.text3, textTransform:"uppercase", letterSpacing:".06em", marginBottom:4 }}>{label}</div>
                 <div style={{ fontSize:13, fontWeight:600, color:C.text }}>{value}</div>
               </div>

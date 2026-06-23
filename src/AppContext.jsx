@@ -420,7 +420,7 @@ export function AppProvider({ children }) {
   if (loading) {
     return (
       <div style={{ background:"#0a0a0a", minHeight:"100vh", display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16 }}>
-        <div style={{ width:48, height:48, borderRadius:"50%", border:"3px solid rgba(255,200,0,.15)", borderTopColor:"#ffc800", animation:"spin 0.8s linear infinite" }}/>
+        <div style={{ width:48, height:48, borderRadius:"50%", border:"3px solid rgba(232,0,13,.15)", borderTopColor:"#e8000d", animation:"spin 0.8s linear infinite" }}/>
         <div style={{ color:"#555", fontSize:14, fontFamily:"'DM Sans',sans-serif", letterSpacing:".05em" }}>Loading VaultX…</div>
         <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       </div>

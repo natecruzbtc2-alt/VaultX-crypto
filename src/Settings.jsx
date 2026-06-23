@@ -78,9 +78,9 @@ export function SettingsPage() {
           </div>
 
           {/* Tabs */}
-          <div style={{ display: "flex", gap: 4, marginBottom: 24, background: `rgba(138,43,226,.06)`, borderRadius: 12, padding: 4 }}>
+          <div style={{ display: "flex", gap: 4, marginBottom: 24, background: `rgba(255,200,0,.05)`, borderRadius: 12, padding: 4 }}>
             {tabs.map(t => (
-              <button key={t.id} style={{ flex: 1, padding: "9px 12px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: activeTab === t.id ? 700 : 400, background: activeTab === t.id ? `rgba(138,43,226,.25)` : "transparent", color: activeTab === t.id ? C.text : C.text3, transition: "all .15s" }} onClick={() => setActiveTab(t.id)}>
+              <button key={t.id} style={{ flex: 1, padding: "9px 12px", borderRadius: 10, border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 13, fontWeight: activeTab === t.id ? 700 : 400, background: activeTab === t.id ? `rgba(255,200,0,.18)` : "transparent", color: activeTab === t.id ? C.text : C.text3, transition: "all .15s" }} onClick={() => setActiveTab(t.id)}>
                 {t.label}
               </button>
             ))}
@@ -165,7 +165,7 @@ export function SettingsPage() {
                 { level: "Level 3", title: "Advanced Verification", desc: "Proof of address + enhanced due diligence", status: "Not started", limit: "Unlimited" },
               ].map((item, i) => (
                 <div key={i} style={{ ...S.scard, marginBottom: 12, display: "flex", alignItems: "center", gap: 16 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: "50%", background: item.status === "Complete" ? "rgba(34,197,94,.15)" : `rgba(138,43,226,.1)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: "50%", background: item.status === "Complete" ? "rgba(34,197,94,.15)" : `rgba(255,200,0,.08)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, flexShrink: 0 }}>
                     {item.status === "Complete" ? "✅" : "📋"}
                   </div>
                   <div style={{ flex: 1 }}>
