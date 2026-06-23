@@ -66,16 +66,16 @@ export function LandingPage() {
         <TickerBar />
 
         {/* ── HERO ── */}
-        <section style={{ textAlign:"center", padding:"clamp(80px,10vw,140px) 24px clamp(60px,8vw,100px)", maxWidth:900, margin:"0 auto" }} className="vx-fade">
+        <section style={{ textAlign:"center", minHeight:"calc(100vh - 120px)", display:"flex", flexDirection:"column", alignItems:"center", justifyContent:"center", padding:"clamp(20px,3vw,40px) 24px clamp(20px,3vw,40px)", maxWidth:1000, margin:"0 auto" }} className="vx-fade">
 
           {/* Badge */}
-          <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(232,0,13,.08)", border:"1px solid rgba(232,0,13,.2)", borderRadius:24, padding:"7px 18px", fontSize:12, color:C.red3, fontWeight:600, marginBottom:32, letterSpacing:".03em" }}>
+          <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(232,0,13,.08)", border:"1px solid rgba(232,0,13,.2)", borderRadius:24, padding:"7px 18px", fontSize:12, color:C.red3, fontWeight:600, marginBottom:20, letterSpacing:".03em" }}>
             <span style={{ width:6, height:6, borderRadius:"50%", background:C.green, display:"inline-block", boxShadow:"0 0 8px "+C.green }}/>
             Live · Real-time prices · UK Regulated · FCA Registered
           </div>
 
           {/* H1 */}
-          <h1 style={{ fontSize:"clamp(42px,7vw,88px)", fontWeight:800, letterSpacing:"-3px", lineHeight:1.0, marginBottom:24, color:"#fff" }}>
+          <h1 style={{ fontSize:"clamp(48px,8vw,100px)", fontWeight:800, letterSpacing:"-4px", lineHeight:.95, marginBottom:20, color:"#fff" }}>
             Trade crypto<br/>
             <span style={{ background:"linear-gradient(135deg,#e8000d,#ff4d55,#ff8085)", WebkitBackgroundClip:"text", WebkitTextFillColor:"transparent", backgroundClip:"text" }}>
               like a professional.
@@ -83,7 +83,7 @@ export function LandingPage() {
           </h1>
 
           {/* Sub */}
-          <p style={{ fontSize:"clamp(16px,2.5vw,20px)", color:C.text2, maxWidth:580, margin:"0 auto 40px", lineHeight:1.75, fontWeight:400 }}>
+          <p style={{ fontSize:"clamp(16px,2.5vw,20px)", color:C.text2, maxWidth:560, margin:"0 auto 32px", lineHeight:1.65, fontWeight:400 }}>
             Real-time markets, portfolio management and instant transfers — the platform serious traders choose.
           </p>
 
@@ -92,7 +92,7 @@ export function LandingPage() {
             <button style={{ ...btn("primary"), padding:"16px 40px", fontSize:16, borderRadius:14, boxShadow:"0 8px 40px rgba(232,0,13,.4)" }} onClick={() => setView("register")}>
               Open Free Account →
             </button>
-            <button style={{ ...btn("ghost"), padding:"16px 40px", fontSize:16, borderRadius:14 }} onClick={() => setView("login")}>
+            <button style={{ background:"rgba(255,255,255,.1)", border:"1px solid rgba(255,255,255,.2)", color:"#fff", padding:"16px 40px", fontSize:16, borderRadius:14, cursor:"pointer", fontFamily:"inherit", fontWeight:600, transition:"all .15s" }} onClick={() => setView("login")}>
               Sign In
             </button>
           </div>
@@ -106,11 +106,11 @@ export function LandingPage() {
         </section>
 
         {/* ── STATS ── */}
-        <section style={{ borderTop:"1px solid rgba(255,255,255,.05)", borderBottom:"1px solid rgba(255,255,255,.05)", background:"rgba(255,255,255,.015)", backdropFilter:"blur(20px)" }}>
-          <div style={{ maxWidth:900, margin:"0 auto", display:"grid", gridTemplateColumns:"repeat(4,1fr)", padding:"0" }}>
+        <section style={{ borderTop:"1px solid rgba(255,255,255,.06)", borderBottom:"1px solid rgba(255,255,255,.06)", background:"rgba(255,255,255,.02)", backdropFilter:"blur(20px) saturate(180%)" }}>
+          <div style={{ maxWidth:1100, margin:"0 auto", display:"grid", gridTemplateColumns:"repeat(4,1fr)", padding:"0" }}>
             {stats.map((s,i) => (
-              <div key={i} style={{ textAlign:"center", padding:"32px 20px", borderRight:i<3?"1px solid rgba(255,255,255,.05)":"none" }}>
-                <div style={{ fontSize:"clamp(28px,4vw,40px)", fontWeight:800, color:"#fff", letterSpacing:"-1px", marginBottom:6 }}>{s.v}</div>
+              <div key={i} style={{ textAlign:"center", padding:"40px 24px", borderRight:i<3?"1px solid rgba(255,255,255,.05)":"none" }}>
+                <div style={{ fontSize:"clamp(32px,4vw,48px)", fontWeight:800, color:"#fff", letterSpacing:"-2px", marginBottom:4 }}>{s.v}</div>
                 <div style={{ fontSize:13, color:C.text3, fontWeight:500 }}>{s.l}</div>
               </div>
             ))}
