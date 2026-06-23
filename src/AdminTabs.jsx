@@ -1314,18 +1314,43 @@ export function AdminCRM() {
       security_code: form.security_code || genCode(),
     };
     if (editClient) {
+      // optimistic update
+      setClients(prev => prev.map(c => c.id===editClient.id ? {...c,...payload} : c));
       try {
-        await supabase.from("vx_crm").update({ ...payload, updated_at:now }).eq("id", editClient.id);
-        setClients(prev => prev.map(c => c.id===editClient.id ? {...c,...payload} : c));
-        showToast("✅ Updated", "success");
-      } catch(e) { showToast("❌ Failed","info"); }
+        const { error } = await supabase.from("vx_crm").update({ ...payload, updated_at:now }).eq("id", editClient.id);
+        if (error) throw error;
+        showToast("✅ Client updated", "success");
+      } catch(e) {
+        // rollback
+        setClients(prev => prev.map(c => c.id===editClient.id ? editClient : c));
+        showToast("❌ Failed to update: " + (e.message||"Check Supabase"), "info");
+        console.error("CRM update error:", e);
+        return;
+      }
     } else {
-      const rec = { id:`CRM${Date.now()}`, ...payload, amount_deposited:payload.deposit, created_at:now, updated_at:now };
+      const rec = {
+        id: `CRM${Date.now()}`,
+        ...payload,
+        amount_deposited: payload.deposit,
+        state: payload.state || "",
+        notes: payload.notes || "",
+        agent: payload.agent || "",
+        created_at: now,
+        updated_at: now,
+      };
+      // optimistic add
+      setClients(prev => [rec, ...prev]);
       try {
-        await supabase.from("vx_crm").insert(rec);
-        setClients(prev => [rec,...prev]);
-        showToast("✅ Client added","success");
-      } catch(e) { showToast("❌ Failed","info"); }
+        const { error } = await supabase.from("vx_crm").insert(rec);
+        if (error) throw error;
+        showToast("✅ Client added", "success");
+      } catch(e) {
+        // rollback — remove from local state
+        setClients(prev => prev.filter(c => c.id !== rec.id));
+        showToast("❌ Failed to save: " + (e.message||"Check Supabase"), "info");
+        console.error("CRM insert error:", e);
+        return;
+      }
     }
     resetForm();
   };
