@@ -1297,60 +1297,60 @@ export function AdminCRM() {
   }, []);
 
   const loadClients = async () => {
-    try {
-      const { data } = await supabase.from("vx_crm").select("*").order("created_at", { ascending:false });
-      if (data) setClients(data);
-    } catch(e) {}
+    if (!supabase) { setLoading(false); return; }
+    const { data, error } = await supabase.from("vx_crm").select("*").order("created_at", { ascending:false });
+    if (error) { console.error("CRM load error:", error); showToast("⚠️ CRM load failed: " + error.message, "info"); }
+    if (data) setClients(data);
     setLoading(false);
   };
 
   const saveClient = async () => {
-    if (!form.first_name.trim() && !form.last_name.trim()) { showToast("⚠️ Name required", "info"); return; }
+    if (!form.first_name.trim() && !form.last_name.trim()) {
+      showToast("⚠️ First or last name required", "info"); return;
+    }
     const now = new Date().toISOString();
-    const payload = {
-      ...form,
-      deposit: parseFloat(form.deposit)||0,
-      balance: parseFloat(form.balance)||0,
-      security_code: form.security_code || genCode(),
-    };
+
+    // Build clean record — only columns that exist in the table
+    const buildRec = (id) => ({
+      id:             id,
+      first_name:     (form.first_name||"").trim(),
+      last_name:      (form.last_name||"").trim(),
+      phone:          (form.phone||"").trim(),
+      email:          (form.email||"").trim(),
+      status:         form.status || "New R",
+      deposit:        parseFloat(form.deposit) || 0,
+      balance:        parseFloat(form.balance) || 0,
+      amount_deposited: parseFloat(form.deposit) || 0,
+      security_code:  (form.security_code||"").trim() || genCode(),
+      notes:          (form.notes||"").trim(),
+      agent:          (form.agent||"").trim(),
+      state:          (form.state||"").trim(),
+      updated_at:     now,
+    });
+
     if (editClient) {
-      // optimistic update
-      setClients(prev => prev.map(c => c.id===editClient.id ? {...c,...payload} : c));
-      try {
-        const { error } = await supabase.from("vx_crm").update({ ...payload, updated_at:now }).eq("id", editClient.id);
-        if (error) throw error;
-        showToast("✅ Client updated", "success");
-      } catch(e) {
-        // rollback
+      const rec = buildRec(editClient.id);
+      setClients(prev => prev.map(c => c.id===editClient.id ? {...c,...rec} : c));
+      const { error } = await supabase.from("vx_crm").update(rec).eq("id", editClient.id);
+      if (error) {
         setClients(prev => prev.map(c => c.id===editClient.id ? editClient : c));
-        showToast("❌ Failed to update: " + (e.message||"Check Supabase"), "info");
-        console.error("CRM update error:", e);
+        showToast("❌ " + error.message, "info");
+        console.error("CRM update:", error);
         return;
       }
+      showToast("✅ Client updated", "success");
     } else {
-      const rec = {
-        id: `CRM${Date.now()}`,
-        ...payload,
-        amount_deposited: payload.deposit,
-        state: payload.state || "",
-        notes: payload.notes || "",
-        agent: payload.agent || "",
-        created_at: now,
-        updated_at: now,
-      };
-      // optimistic add
+      const newId = "CRM" + Date.now() + Math.random().toString(36).slice(2,6);
+      const rec   = { ...buildRec(newId), created_at: now };
       setClients(prev => [rec, ...prev]);
-      try {
-        const { error } = await supabase.from("vx_crm").insert(rec);
-        if (error) throw error;
-        showToast("✅ Client added", "success");
-      } catch(e) {
-        // rollback — remove from local state
-        setClients(prev => prev.filter(c => c.id !== rec.id));
-        showToast("❌ Failed to save: " + (e.message||"Check Supabase"), "info");
-        console.error("CRM insert error:", e);
+      const { error } = await supabase.from("vx_crm").insert(rec);
+      if (error) {
+        setClients(prev => prev.filter(c => c.id !== newId));
+        showToast("❌ " + error.message, "info");
+        console.error("CRM insert:", error);
         return;
       }
+      showToast("✅ Client added!", "success");
     }
     resetForm();
   };
