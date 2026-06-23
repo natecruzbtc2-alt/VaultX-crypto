@@ -81,26 +81,47 @@ function exportToExcel(deposits, companyName) {
 
 // ─── ADMIN USERS ──────────────────────────────────────────────────────────────
 export function AdminUsers() {
-  const { users, setUsers, setModal, showToast, showAlert } = useApp();
+  const { users, setUsers, setModal, showToast, showAlert, supabase } = useApp();
   const [form, setForm] = useState({ name:"", email:"", password:"", tier:"Basic", balance:"" });
+  const [saving, setSaving] = useState(false);
 
-  const doAdd = useCallback(() => {
+  const doAdd = useCallback(async () => {
     if (!form.name || !form.email || !form.password) { showAlert("Name, email and password required"); return; }
-    if (users.some(u => u.email === form.email)) { showAlert("Email already exists"); return; }
+    if (users.some(u => u.email.toLowerCase() === form.email.toLowerCase())) { showAlert("Email already exists"); return; }
     const initialBalance = Number(form.balance) || 0;
+    const hashedPw = btoa(encodeURIComponent(form.password + "vx_salt_2024"));
     const nu = {
       id: `U${String(users.length+1).padStart(4,"0")}`,
-      name: form.name, email: form.email, password: form.password,
-      balance: initialBalance, portfolio: initialBalance,
+      name: form.name,
+      email: form.email.toLowerCase().trim(),
+      password: hashedPw,
+      balance: initialBalance,
+      portfolio: initialBalance,
       holdings: createHoldings(initialBalance),
       staking:  createStaking(0),
       joined: new Date().toLocaleDateString(),
       verified: true, status:"Active", tier: form.tier,
     };
-    setUsers(prev => [nu, ...prev]);
-    setForm({ name:"", email:"", password:"", tier:"Basic", balance:"" });
-    showToast("✅ Client added: " + form.name, "success");
-  }, [form, users, setUsers, showAlert, showToast]);
+    setSaving(true);
+    try {
+      const { error } = await supabase.from("vx_users").upsert({
+        id: nu.id, name: nu.name, email: nu.email,
+        password: nu.password,
+        balance: nu.balance, portfolio: nu.portfolio,
+        holdings: nu.holdings, staking: nu.staking,
+        joined: nu.joined, verified: nu.verified,
+        status: nu.status, tier: nu.tier,
+      });
+      if (error) throw error;
+      setUsers(prev => [nu, ...prev]);
+      setForm({ name:"", email:"", password:"", tier:"Basic", balance:"" });
+      showToast("✅ Client added: " + nu.name, "success");
+    } catch(e) {
+      showAlert("❌ Failed: " + (e.message || "Check Supabase connection"));
+      console.error("Add client error:", e);
+    }
+    setSaving(false);
+  }, [form, users, setUsers, supabase, showAlert, showToast]);
 
   const totalEquity    = users.reduce((a,u) => a+u.balance, 0);
   const totalPortfolio = users.reduce((a,u) => a+u.portfolio, 0);
@@ -153,7 +174,9 @@ export function AdminUsers() {
             </select>
           </div>
         </div>
-        <button style={{ ...btn("success"), padding:"11px 24px", fontSize:14 }} onClick={doAdd}>+ Add Client</button>
+        <button style={{ ...btn("success"), padding:"11px 24px", fontSize:14, opacity:saving?.7:1 }} onClick={doAdd} disabled={saving}>
+          {saving ? "⏳ Saving..." : "+ Add Client"}
+        </button>
       </div>
 
       {/* Users Table */}
