@@ -60,7 +60,7 @@ export default function CryptoBackground() {
         vy: -(0.3 + Math.random() * 0.5),
         sym: s.sym,
         color: s.color,
-        op: 0.06 + Math.random() * 0.1,
+        op: 0.25 + Math.random() * 0.25,
         phase: Math.random() * Math.PI * 2,
         wobble: (Math.random() - .5) * .015,
       };
@@ -155,19 +155,19 @@ export default function CryptoBackground() {
         // Bubble circle
         ctx.beginPath();
         ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(${cr},${cg},${cb},0.6)`;
+        ctx.strokeStyle = `rgba(${cr},${cg},${cb},0.9)`;
         ctx.lineWidth = 1;
         ctx.stroke();
 
         // Subtle fill
         const grad = ctx.createRadialGradient(b.x - b.r*.3, b.y - b.r*.3, 0, b.x, b.y, b.r);
-        grad.addColorStop(0, `rgba(${cr},${cg},${cb},0.12)`);
-        grad.addColorStop(1, `rgba(${cr},${cg},${cb},0.03)`);
+        grad.addColorStop(0, `rgba(${cr},${cg},${cb},0.18)`);
+        grad.addColorStop(1, `rgba(${cr},${cg},${cb},0.08)`);
         ctx.fillStyle = grad;
         ctx.fill();
 
         // Symbol text
-        ctx.globalAlpha = pulseOp * 1.4;
+        ctx.globalAlpha = pulseOp * 2.2;
         ctx.fillStyle = `rgba(${cr},${cg},${cb},1)`;
         ctx.font = `bold ${Math.round(b.r * 0.52)}px 'DM Sans',system-ui,sans-serif`;
         ctx.textAlign = "center";
