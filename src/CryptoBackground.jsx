@@ -33,6 +33,44 @@ export default function CryptoBackground() {
       op:0.04+Math.random()*.1, phase:Math.random()*Math.PI*2
     }));
 
+    // ── CRYPTO BUBBLES ────────────────────────────────────────────────────────
+    const SYMBOLS = [
+      { sym:"BTC",  color:"#F7931A" },
+      { sym:"ETH",  color:"#7B8CDE" },
+      { sym:"SOL",  color:"#9945FF" },
+      { sym:"BNB",  color:"#F0B90B" },
+      { sym:"XRP",  color:"#00AAE4" },
+      { sym:"ADA",  color:"#4A90E2" },
+      { sym:"DOGE", color:"#C2A633" },
+      { sym:"USDT", color:"#26A17B" },
+      { sym:"BTC",  color:"#F7931A" },
+      { sym:"ETH",  color:"#7B8CDE" },
+      { sym:"SOL",  color:"#9945FF" },
+      { sym:"BNB",  color:"#F0B90B" },
+    ];
+
+    const makeBubble = () => {
+      const s = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
+      const r = 18 + Math.random() * 28;
+      return {
+        x: Math.random() * W,
+        y: H + r + Math.random() * H,
+        r,
+        vx: (Math.random() - .5) * .4,
+        vy: -(0.3 + Math.random() * 0.5),
+        sym: s.sym,
+        color: s.color,
+        op: 0.06 + Math.random() * 0.1,
+        phase: Math.random() * Math.PI * 2,
+        wobble: (Math.random() - .5) * .015,
+      };
+    };
+
+    let bubbles = Array.from({ length: 18 }, makeBubble).map(b => ({
+      ...b,
+      y: Math.random() * H, // start scattered on screen
+    }));
+
     let scanX = 0;
 
     function draw() {
@@ -86,6 +124,56 @@ export default function CryptoBackground() {
         const op=d.op*(0.5+.5*Math.sin(d.phase));
         ctx.save(); ctx.globalAlpha=op;
         ctx.fillStyle="rgba(255,200,0,1)"; ctx.beginPath(); ctx.arc(d.x,d.y,d.r,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+      });
+
+      // ── Draw crypto bubbles ──────────────────────────────────────────────
+      bubbles.forEach((b, i) => {
+        b.phase += .008;
+        b.vx += b.wobble;
+        if (Math.abs(b.vx) > 0.6) b.wobble *= -1;
+        b.x += b.vx;
+        b.y += b.vy;
+
+        // Reset bubble when it floats off the top
+        if (b.y < -b.r * 2) {
+          bubbles[i] = makeBubble();
+          return;
+        }
+
+        const pulseOp = b.op * (0.7 + 0.3 * Math.sin(b.phase));
+
+        // Parse coin color
+        const hex = b.color.replace("#","");
+        const cr = parseInt(hex.slice(0,2),16);
+        const cg = parseInt(hex.slice(2,4),16);
+        const cb = parseInt(hex.slice(4,6),16);
+
+        ctx.save();
+        ctx.globalAlpha = pulseOp;
+
+        // Bubble circle
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(${cr},${cg},${cb},0.6)`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Subtle fill
+        const grad = ctx.createRadialGradient(b.x - b.r*.3, b.y - b.r*.3, 0, b.x, b.y, b.r);
+        grad.addColorStop(0, `rgba(${cr},${cg},${cb},0.12)`);
+        grad.addColorStop(1, `rgba(${cr},${cg},${cb},0.03)`);
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // Symbol text
+        ctx.globalAlpha = pulseOp * 1.4;
+        ctx.fillStyle = `rgba(${cr},${cg},${cb},1)`;
+        ctx.font = `bold ${Math.round(b.r * 0.52)}px 'DM Sans',system-ui,sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(b.sym, b.x, b.y);
+
         ctx.restore();
       });
 
