@@ -168,7 +168,7 @@ export function AdminUsers() {
             </select>
           </div>
         </div>
-        <button style={{ ...btn("success"), padding:"11px 24px", fontSize:14, opacity:saving?.7:1 }} onClick={doAdd} disabled={saving}>
+        <button style={{ ...btn("success"), padding:"11px 24px", fontSize:14, opacity:saving?0.7:1 }} onClick={doAdd} disabled={saving}>
           {saving ? "⏳ Saving..." : "+ Add Client"}
         </button>
       </div>
