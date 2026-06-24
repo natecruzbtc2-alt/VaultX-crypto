@@ -208,7 +208,6 @@ export function AppProvider({ children }) {
     (async () => { await loadAll(); if (mounted) setLoading(false); })();
 
     const channel = supabase.channel("vx_realtime")
-      .on("postgres_changes", { event:"*", schema:"public", table:"vx_users" },        () => loadAll())
       .on("postgres_changes", { event:"*", schema:"public", table:"vx_pending" },      () => loadAll())
       .on("postgres_changes", { event:"*", schema:"public", table:"vx_fees" },         () => loadAll())
       .on("postgres_changes", { event:"*", schema:"public", table:"vx_transactions" }, () => loadAll())
@@ -234,19 +233,20 @@ export function AppProvider({ children }) {
 
   // ── UPSERT USER TO SUPABASE ───────────────────────────────────────────────────
   const upsertUserRow = async (u) => {
-    await supabase.from("vx_users").upsert({
+    const { error } = await supabase.from("vx_users").upsert({
       id:u.id, name:u.name, email:u.email,
-      password:u.password, // already hashed before storing
+      password:u.password,
       balance:u.balance, portfolio:u.portfolio,
       holdings:u.holdings||[], staking:u.staking||[],
       joined:u.joined, verified:u.verified, status:u.status, tier:u.tier,
     });
+    if (error) { console.error("upsertUserRow error:", error); throw error; }
   };
 
   const updateUser = useCallback(async (u) => {
     setUser(u);
     setUsers(prev => prev.map(x => x.email===u.email ? u : x));
-    try { await upsertUserRow(u); } catch(e) {}
+    try { await upsertUserRow(u); } catch(e) { console.error("updateUser failed:", e); }
   }, []);
 
   // ── REGISTER NEW USER (saves directly to Supabase) ────────────────────────────
@@ -265,24 +265,24 @@ export function AppProvider({ children }) {
 
   // ── LOGIN (checks hashed password) ────────────────────────────────────────────
   const loginUser = useCallback((email, password) => {
-    // Rate limiting: max 5 attempts per email per 5 minutes
-    const key = email.toLowerCase();
+    const key = (email||"").toLowerCase().trim();
     const now = Date.now();
     if (!loginAttempts.current[key]) loginAttempts.current[key] = { count:0, firstAt:now };
     const att = loginAttempts.current[key];
     if (now - att.firstAt > 5*60*1000) { att.count=0; att.firstAt=now; }
     if (att.count >= 5) return { success:false, error:"Too many attempts. Please wait 5 minutes." };
 
-    const u = users.find(u => u.email === email);
-    if (!u) { att.count++; return { success:false, error:"User not found" }; }
+    const u = users.find(u => (u.email||"").toLowerCase().trim() === key);
+    if (!u) { att.count++; return { success:false, error:"No account found with that email" }; }
 
-    // Support both old plain-text passwords (migration) and new hashed ones
-    const valid = u.password === password ||         // old plain text (migration)
-                  checkPw(password, u.password);     // new hashed
+    const valid =
+      u.password === password ||               // plain text (old)
+      checkPw(password, u.password) ||         // hashed (new)
+      hashPw(password) === u.password;         // double check hash
 
-    if (!valid) { att.count++; return { success:false, error:"Invalid credentials" }; }
+    if (!valid) { att.count++; return { success:false, error:"Incorrect password" }; }
 
-    att.count = 0; // reset on success
+    att.count = 0;
     return { success:true, user:u };
   }, [users]);
 
@@ -301,15 +301,24 @@ export function AppProvider({ children }) {
   const setUsersAndSave = useCallback((updater) => {
     setUsers(prev => {
       const next = typeof updater==="function" ? updater(prev) : updater;
+      const prevMap = new Map(prev.map(u=>[u.email,u]));
+      const nextMap = new Map(next.map(u=>[u.email,u]));
       (async()=>{
         try {
-          const prevEmails = new Set(prev.map(u=>u.email));
-          const nextEmails = new Set(next.map(u=>u.email));
-          for (const u of next) await upsertUserRow(u);
-          for (const u of prev) {
-            if (!nextEmails.has(u.email)) await supabase.from("vx_users").delete().eq("email",u.email);
+          // Only upsert new or changed users
+          for (const u of next) {
+            const old = prevMap.get(u.email);
+            if (!old || JSON.stringify(old) !== JSON.stringify(u)) {
+              await upsertUserRow(u);
+            }
           }
-        } catch(e) {}
+          // Delete removed users
+          for (const u of prev) {
+            if (!nextMap.has(u.email)) {
+              await supabase.from("vx_users").delete().eq("email",u.email);
+            }
+          }
+        } catch(e) { console.error("setUsersAndSave error:", e); }
       })();
       return next;
     });
