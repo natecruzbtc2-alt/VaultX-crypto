@@ -207,15 +207,20 @@ export function AppProvider({ children }) {
     let mounted = true;
     (async () => { await loadAll(); if (mounted) setLoading(false); })();
 
-    const channel = supabase.channel("vx_realtime")
-      .on("postgres_changes", { event:"*", schema:"public", table:"vx_pending" },      () => loadAll())
-      .on("postgres_changes", { event:"*", schema:"public", table:"vx_fees" },         () => loadAll())
-      .on("postgres_changes", { event:"*", schema:"public", table:"vx_transactions" }, () => loadAll())
-      .on("postgres_changes", { event:"*", schema:"public", table:"vx_wallets" },      () => loadAll())
+    const channel = supabase.channel("vx_realtime_v1")
+      .on("postgres_changes", { event:"*", schema:"public", table:"vx_pending" },      () => { if(mounted) loadAll(); })
+      .on("postgres_changes", { event:"*", schema:"public", table:"vx_fees" },         () => { if(mounted) loadAll(); })
+      .on("postgres_changes", { event:"*", schema:"public", table:"vx_transactions" }, () => { if(mounted) loadAll(); })
+      .on("postgres_changes", { event:"*", schema:"public", table:"vx_wallets" },      () => { if(mounted) loadAll(); })
       .subscribe();
 
-    const pollId = setInterval(loadAll, 8000);
-    return () => { mounted=false; supabase.removeChannel(channel); clearInterval(pollId); };
+    // Poll every 30s instead of 8s to avoid flooding
+    const pollId = setInterval(() => { if(mounted) loadAll(); }, 30000);
+    return () => {
+      mounted = false;
+      supabase.removeChannel(channel);
+      clearInterval(pollId);
+    };
   }, [loadAll]);
 
   // ── HELPERS ───────────────────────────────────────────────────────────────────
@@ -254,22 +259,22 @@ export function AppProvider({ children }) {
     const hashedUser = { ...userData, password: hashPw(userData.rawPassword) };
     delete hashedUser.rawPassword;
     try {
-      const { error } = await supabase.from("vx_users").upsert({
+      const { data, error } = await supabase.from("vx_users").upsert({
         id:        hashedUser.id,
         name:      hashedUser.name,
         email:     hashedUser.email,
         password:  hashedUser.password,
         balance:   hashedUser.balance,
         portfolio: hashedUser.portfolio,
-        holdings:  hashedUser.holdings || [],
-        staking:   hashedUser.staking  || [],
+        holdings:  JSON.stringify(hashedUser.holdings || []),
+        staking:   JSON.stringify(hashedUser.staking  || []),
         joined:    hashedUser.joined,
         verified:  hashedUser.verified,
         status:    hashedUser.status,
         tier:      hashedUser.tier,
-      });
+      }).select();
       if (error) {
-        console.error("registerUser Supabase error:", error);
+        console.error("registerUser Supabase error:", JSON.stringify(error));
         return { success: false, error: error.message };
       }
       setUsers(prev => [hashedUser, ...prev.filter(u => u.email !== hashedUser.email)]);
