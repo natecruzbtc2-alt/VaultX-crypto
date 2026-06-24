@@ -251,14 +251,31 @@ export function AppProvider({ children }) {
 
   // ── REGISTER NEW USER (saves directly to Supabase) ────────────────────────────
   const registerUser = useCallback(async (userData) => {
-    // Hash password before storing
     const hashedUser = { ...userData, password: hashPw(userData.rawPassword) };
     delete hashedUser.rawPassword;
-    setUsers(prev => [...prev, hashedUser]);
     try {
-      await upsertUserRow(hashedUser);
+      const { error } = await supabase.from("vx_users").upsert({
+        id:        hashedUser.id,
+        name:      hashedUser.name,
+        email:     hashedUser.email,
+        password:  hashedUser.password,
+        balance:   hashedUser.balance,
+        portfolio: hashedUser.portfolio,
+        holdings:  hashedUser.holdings || [],
+        staking:   hashedUser.staking  || [],
+        joined:    hashedUser.joined,
+        verified:  hashedUser.verified,
+        status:    hashedUser.status,
+        tier:      hashedUser.tier,
+      });
+      if (error) {
+        console.error("registerUser Supabase error:", error);
+        return { success: false, error: error.message };
+      }
+      setUsers(prev => [hashedUser, ...prev.filter(u => u.email !== hashedUser.email)]);
       return { success: true };
     } catch(e) {
+      console.error("registerUser exception:", e);
       return { success: false, error: e.message };
     }
   }, []);

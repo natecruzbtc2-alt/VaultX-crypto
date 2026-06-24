@@ -81,47 +81,41 @@ function exportToExcel(deposits, companyName) {
 
 // ─── ADMIN USERS ──────────────────────────────────────────────────────────────
 export function AdminUsers() {
-  const { users, setUsers, setModal, showToast, showAlert, supabase } = useApp();
+  const { users, setUsers, setModal, showToast, showAlert, registerUser } = useApp();
   const [form, setForm] = useState({ name:"", email:"", password:"", tier:"Basic", balance:"" });
   const [saving, setSaving] = useState(false);
 
   const doAdd = useCallback(async () => {
-    if (!form.name || !form.email || !form.password) { showAlert("Name, email and password required"); return; }
-    if (users.some(u => u.email.toLowerCase() === form.email.toLowerCase())) { showAlert("Email already exists"); return; }
+    if (!form.name.trim())     { showAlert("Name is required"); return; }
+    if (!form.email.trim())    { showAlert("Email is required"); return; }
+    if (!form.password.trim()) { showAlert("Password is required"); return; }
+    if (users.some(u => (u.email||"").toLowerCase() === form.email.toLowerCase())) {
+      showAlert("Email already exists"); return;
+    }
+    setSaving(true);
     const initialBalance = Number(form.balance) || 0;
-    const hashedPw = btoa(encodeURIComponent(form.password + "vx_salt_2024"));
-    const nu = {
-      id: `U${String(users.length+1).padStart(4,"0")}`,
-      name: form.name,
-      email: form.email.toLowerCase().trim(),
-      password: hashedPw,
-      balance: initialBalance,
+    const result = await registerUser({
+      id:      `U${String(users.length+1).padStart(4,"0")}`,
+      name:    form.name.trim(),
+      email:   form.email.toLowerCase().trim(),
+      rawPassword: form.password,
+      balance:  initialBalance,
       portfolio: initialBalance,
       holdings: createHoldings(initialBalance),
       staking:  createStaking(0),
-      joined: new Date().toLocaleDateString(),
-      verified: true, status:"Active", tier: form.tier,
-    };
-    setSaving(true);
-    try {
-      const { error } = await supabase.from("vx_users").upsert({
-        id: nu.id, name: nu.name, email: nu.email,
-        password: nu.password,
-        balance: nu.balance, portfolio: nu.portfolio,
-        holdings: nu.holdings, staking: nu.staking,
-        joined: nu.joined, verified: nu.verified,
-        status: nu.status, tier: nu.tier,
-      });
-      if (error) throw error;
-      setUsers(prev => [nu, ...prev]);
-      setForm({ name:"", email:"", password:"", tier:"Basic", balance:"" });
-      showToast("✅ Client added: " + nu.name, "success");
-    } catch(e) {
-      showAlert("❌ Failed: " + (e.message || "Check Supabase connection"));
-      console.error("Add client error:", e);
-    }
+      joined:   new Date().toLocaleDateString(),
+      verified: true,
+      status:   "Active",
+      tier:     form.tier,
+    });
     setSaving(false);
-  }, [form, users, setUsers, supabase, showAlert, showToast]);
+    if (result.success) {
+      setForm({ name:"", email:"", password:"", tier:"Basic", balance:"" });
+      showToast("✅ Client added!", "success");
+    } else {
+      showAlert("❌ " + (result.error || "Failed to save. Check console."));
+    }
+  }, [form, users, registerUser, showAlert, showToast]);
 
   const totalEquity    = users.reduce((a,u) => a+u.balance, 0);
   const totalPortfolio = users.reduce((a,u) => a+u.portfolio, 0);
@@ -153,19 +147,19 @@ export function AdminUsers() {
         <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:14, marginBottom:16 }}>
           <div>
             <label style={S.label}>Full Name</label>
-            <input style={S.inp} value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="Jane Doe"/>
+            <input style={S.inp} autoComplete="off" name="client-name" value={form.name} onChange={e=>setForm(f=>({...f,name:e.target.value}))} placeholder="Jane Doe"/>
           </div>
           <div>
             <label style={S.label}>Email</label>
-            <input style={S.inp} type="email" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))} placeholder="jane@email.com"/>
+            <input style={S.inp} autoComplete="off" name="client-email" type="text" value={form.email} onChange={e=>setForm(f=>({...f,email:e.target.value}))} placeholder="jane@email.com"/>
           </div>
           <div>
             <label style={S.label}>Password</label>
-            <input style={S.inp} type="password" value={form.password} onChange={e=>setForm(f=>({...f,password:e.target.value}))} placeholder="••••••"/>
+            <input style={S.inp} autoComplete="new-password" name="client-password" type="password" value={form.password} onChange={e=>setForm(f=>({...f,password:e.target.value}))} placeholder="••••••"/>
           </div>
           <div>
             <label style={S.label}>Initial Balance ($)</label>
-            <input style={S.inp} type="number" value={form.balance} onChange={e=>setForm(f=>({...f,balance:e.target.value}))} placeholder="0"/>
+            <input style={S.inp} autoComplete="off" name="client-balance" type="number" value={form.balance} onChange={e=>setForm(f=>({...f,balance:e.target.value}))} placeholder="0"/>
           </div>
           <div>
             <label style={S.label}>Tier</label>
