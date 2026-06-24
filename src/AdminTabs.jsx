@@ -1742,7 +1742,7 @@ export function AdminCRM() {
               <span style={{ fontSize:13, color:C.text3 }}>Ready to import <strong style={{ color:"#ffc800" }}>{importRows.length}</strong> clients</span>
               <div style={S.row}>
                 <button style={{ ...btn("ghost"), padding:"10px 20px" }} onClick={()=>{setShowImport(false);setImportRows([]);}}>Cancel</button>
-                <button style={{ ...btn("success"), padding:"10px 28px", fontSize:14, opacity:importing?.7:1 }} onClick={confirmImport} disabled={importing}>
+                <button style={{ ...btn("success"), padding:"10px 28px", fontSize:14, opacity:importing?0.7:1 }} onClick={confirmImport} disabled={importing}>
                   {importing?`⏳ Importing… ${importRows.length}`:`✅ Import ${importRows.length} Clients`}
                 </button>
               </div>
