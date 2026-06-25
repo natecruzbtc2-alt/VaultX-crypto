@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-export default function CryptoBackground() {
+export default function CryptoBackground({ light = false }) {
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -14,180 +14,191 @@ export default function CryptoBackground() {
     const resize = () => { W = window.innerWidth; H = window.innerHeight; canvas.width = W; canvas.height = H; };
     window.addEventListener("resize", resize);
 
-    const makeChart = (i) => {
-      const pts = [];
-      let y = H * (0.2 + Math.random() * 0.6);
-      for (let j = 0; j < 80; j++) {
-        y = Math.max(H*.05, Math.min(H*.95, y + (Math.random()-.48)*20));
-        pts.push(y);
+    // ── PARTICLES ─────────────────────────────────────────────────────
+    const particles = Array.from({ length: 60 }, () => ({
+      x: Math.random() * W, y: Math.random() * H,
+      vx: (Math.random() - .5) * .3, vy: (Math.random() - .5) * .3,
+      r: .5 + Math.random() * 1.5,
+      op: .1 + Math.random() * .2,
+      phase: Math.random() * Math.PI * 2,
+    }));
+
+    // ── NETWORK NODES ─────────────────────────────────────────────────
+    const nodes = Array.from({ length: 35 }, () => ({
+      x: Math.random() * W, y: Math.random() * H,
+      vx: (Math.random() - .5) * .25, vy: (Math.random() - .5) * .25,
+      r: 1.5 + Math.random() * 2,
+      op: .12 + Math.random() * .18,
+    }));
+
+    // ── HEXAGON ANIMATION ─────────────────────────────────────────────
+    let hexAngle = 0;
+    let hexPulse = 0;
+
+    function drawHex(cx, cy, size, angle, alpha, strokeColor, glowColor, lineW = 2) {
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.translate(cx, cy);
+      ctx.rotate(angle);
+
+      // Glow
+      ctx.shadowColor = glowColor;
+      ctx.shadowBlur = 40;
+
+      ctx.beginPath();
+      for (let i = 0; i < 6; i++) {
+        const a = (Math.PI / 3) * i;
+        const x = Math.cos(a) * size;
+        const y = Math.sin(a) * size;
+        i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
       }
-      const colors = ["#ffc800","#ffd633","#e6b400","#ffffff","#ffc800"];
-      return { pts, drawn: Math.random()*40, speed: 0.06+Math.random()*.1, color: colors[i%colors.length], opacity: 0.04+Math.random()*.07, lineW: 0.6+Math.random()*.8 };
-    };
-    let charts = [0,1,2,3,4].map(makeChart);
+      ctx.closePath();
 
-    const dots = Array.from({length:50}, () => ({
-      x:Math.random()*W, y:Math.random()*H,
-      r:0.4+Math.random()*1.2,
-      vx:(Math.random()-.5)*.2, vy:(Math.random()-.5)*.2,
-      op:0.04+Math.random()*.1, phase:Math.random()*Math.PI*2
-    }));
+      // Gradient stroke
+      const grad = ctx.createLinearGradient(-size, -size, size, size);
+      grad.addColorStop(0, strokeColor[0]);
+      grad.addColorStop(.5, strokeColor[1]);
+      grad.addColorStop(1, strokeColor[2] || strokeColor[0]);
+      ctx.strokeStyle = grad;
+      ctx.lineWidth = lineW;
+      ctx.stroke();
 
-    // ── CRYPTO BUBBLES ────────────────────────────────────────────────────────
-    const SYMBOLS = [
-      { sym:"BTC",  color:"#F7931A" },
-      { sym:"ETH",  color:"#7B8CDE" },
-      { sym:"SOL",  color:"#9945FF" },
-      { sym:"BNB",  color:"#F0B90B" },
-      { sym:"XRP",  color:"#00AAE4" },
-      { sym:"ADA",  color:"#4A90E2" },
-      { sym:"DOGE", color:"#C2A633" },
-      { sym:"USDT", color:"#26A17B" },
-      { sym:"BTC",  color:"#F7931A" },
-      { sym:"ETH",  color:"#7B8CDE" },
-      { sym:"SOL",  color:"#9945FF" },
-      { sym:"BNB",  color:"#F0B90B" },
-    ];
+      // Inner fill
+      const fill = ctx.createRadialGradient(0, 0, 0, 0, 0, size);
+      fill.addColorStop(0, `rgba(120,80,255,${alpha * .08})`);
+      fill.addColorStop(1, `rgba(80,160,255,${alpha * .03})`);
+      ctx.fillStyle = fill;
+      ctx.fill();
 
-    const makeBubble = () => {
-      const s = SYMBOLS[Math.floor(Math.random() * SYMBOLS.length)];
-      const r = 18 + Math.random() * 28;
-      return {
-        x: Math.random() * W,
-        y: H + r + Math.random() * H,
-        r,
-        vx: (Math.random() - .5) * .4,
-        vy: -(0.3 + Math.random() * 0.5),
-        sym: s.sym,
-        color: s.color,
-        op: 0.25 + Math.random() * 0.25,
-        phase: Math.random() * Math.PI * 2,
-        wobble: (Math.random() - .5) * .015,
-      };
-    };
-
-    let bubbles = Array.from({ length: 18 }, makeBubble).map(b => ({
-      ...b,
-      y: Math.random() * H, // start scattered on screen
-    }));
-
-    let scanX = 0;
+      ctx.restore();
+    }
 
     function draw() {
-      ctx.clearRect(0,0,W,H);
+      ctx.clearRect(0, 0, W, H);
 
-      const grd = ctx.createRadialGradient(W/2, 0, 0, W/2, H*.4, W*.6);
-      grd.addColorStop(0,   "rgba(255,200,0,.06)");
-      grd.addColorStop(.35, "rgba(255,200,0,.02)");
-      grd.addColorStop(1,   "rgba(0,0,0,0)");
-      ctx.fillStyle = grd; ctx.fillRect(0,0,W,H);
+      // Background gradient — deep navy/purple like BCB
+      const bg = ctx.createRadialGradient(W * .35, H * .4, 0, W * .5, H * .5, W * .85);
+      bg.addColorStop(0,   "rgba(60,20,120,.55)");
+      bg.addColorStop(.35, "rgba(20,10,80,.4)");
+      bg.addColorStop(.7,  "rgba(8,6,40,.3)");
+      bg.addColorStop(1,   "rgba(0,0,0,0)");
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, W, H);
 
-      ctx.strokeStyle = "rgba(255,255,255,.022)";
-      ctx.lineWidth = .5;
-      for(let c=0;c<=18;c++){const x=(W/18)*c;ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
-      for(let r=0;r<=10;r++){const y=(H/10)*r;ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+      // Secondary purple glow top-left
+      const bg2 = ctx.createRadialGradient(W * .15, H * .2, 0, W * .15, H * .2, W * .4);
+      bg2.addColorStop(0,  "rgba(100,40,200,.18)");
+      bg2.addColorStop(1,  "rgba(0,0,0,0)");
+      ctx.fillStyle = bg2; ctx.fillRect(0, 0, W, H);
 
-      scanX = (scanX+.4)%W;
-      const sg = ctx.createLinearGradient(scanX-100,0,scanX+2,0);
-      sg.addColorStop(0,"rgba(255,200,0,0)"); sg.addColorStop(1,"rgba(255,200,0,.025)");
-      ctx.fillStyle=sg; ctx.fillRect(scanX-100,0,102,H);
-      ctx.strokeStyle="rgba(255,200,0,.05)"; ctx.lineWidth=1;
-      ctx.setLineDash([4,8]); ctx.beginPath(); ctx.moveTo(scanX,0); ctx.lineTo(scanX,H); ctx.stroke(); ctx.setLineDash([]);
+      // Subtle grid
+      ctx.strokeStyle = "rgba(120,80,255,.06)"; ctx.lineWidth = .5;
+      for (let c = 0; c <= 24; c++) { const x = (W/24)*c; ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+      for (let r = 0; r <= 14; r++) { const y = (H/14)*r; ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
 
-      charts.forEach((ch,ci) => {
-        ch.drawn += ch.speed;
-        if(ch.drawn>=ch.pts.length-1){charts[ci]=makeChart(ci);return;}
-        const count=Math.floor(ch.drawn);
-        if(count<2) return;
-        const stepX = W/(ch.pts.length-1);
-        const hex=ch.color.replace("#","");
-        const r=parseInt(hex.slice(0,2),16),g=parseInt(hex.slice(2,4),16),b=parseInt(hex.slice(4,6),16);
-        ctx.save(); ctx.globalAlpha=ch.opacity;
-        ctx.beginPath(); ctx.moveTo(0,H);
-        for(let i=0;i<=count;i++) ctx.lineTo(i*stepX,ch.pts[i]);
-        ctx.lineTo(count*stepX,H); ctx.closePath();
-        const ag=ctx.createLinearGradient(0,0,0,H);
-        ag.addColorStop(0,`rgba(${r},${g},${b},.2)`); ag.addColorStop(1,`rgba(${r},${g},${b},0)`);
-        ctx.fillStyle=ag; ctx.fill();
-        ctx.beginPath();
-        for(let i=0;i<=count;i++){const x=i*stepX,y=ch.pts[i];i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
-        ctx.strokeStyle=`rgba(${r},${g},${b},.6)`; ctx.lineWidth=ch.lineW; ctx.lineJoin="round"; ctx.stroke();
-        const hx=count*stepX, hy=ch.pts[count];
-        ctx.globalAlpha=Math.min(1,ch.opacity*5);
-        ctx.beginPath(); ctx.arc(hx,hy,2.5,0,Math.PI*2);
-        ctx.fillStyle=`rgba(${r},${g},${b},1)`; ctx.fill();
-        ctx.restore();
-      });
-
-      dots.forEach(d=>{
-        d.x=(d.x+d.vx+W)%W; d.y=(d.y+d.vy+H)%H; d.phase+=.02;
-        const op=d.op*(0.5+.5*Math.sin(d.phase));
-        ctx.save(); ctx.globalAlpha=op;
-        ctx.fillStyle="rgba(255,200,0,1)"; ctx.beginPath(); ctx.arc(d.x,d.y,d.r,0,Math.PI*2); ctx.fill();
-        ctx.restore();
-      });
-
-      // ── Draw crypto bubbles ──────────────────────────────────────────────
-      bubbles.forEach((b, i) => {
-        b.phase += .008;
-        b.vx += b.wobble;
-        if (Math.abs(b.vx) > 0.6) b.wobble *= -1;
-        b.x += b.vx;
-        b.y += b.vy;
-
-        // Reset bubble when it floats off the top
-        if (b.y < -b.r * 2) {
-          bubbles[i] = makeBubble();
-          return;
+      // Node network
+      nodes.forEach(n => { n.x=(n.x+n.vx+W)%W; n.y=(n.y+n.vy+H)%H; });
+      for (let i = 0; i < nodes.length; i++) {
+        for (let j = i+1; j < nodes.length; j++) {
+          const dx = nodes[i].x-nodes[j].x, dy = nodes[i].y-nodes[j].y;
+          const dist = Math.sqrt(dx*dx+dy*dy);
+          if (dist < 160) {
+            ctx.strokeStyle = `rgba(120,80,255,${(1-dist/160)*.07})`;
+            ctx.lineWidth = .5;
+            ctx.beginPath(); ctx.moveTo(nodes[i].x,nodes[i].y); ctx.lineTo(nodes[j].x,nodes[j].y); ctx.stroke();
+          }
         }
-
-        const pulseOp = b.op * (0.7 + 0.3 * Math.sin(b.phase));
-
-        // Parse coin color
-        const hex = b.color.replace("#","");
-        const cr = parseInt(hex.slice(0,2),16);
-        const cg = parseInt(hex.slice(2,4),16);
-        const cb = parseInt(hex.slice(4,6),16);
-
-        ctx.save();
-        ctx.globalAlpha = pulseOp;
-
-        // Bubble circle
-        ctx.beginPath();
-        ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
-        ctx.strokeStyle = `rgba(${cr},${cg},${cb},0.9)`;
-        ctx.lineWidth = 1;
-        ctx.stroke();
-
-        // Subtle fill
-        const grad = ctx.createRadialGradient(b.x - b.r*.3, b.y - b.r*.3, 0, b.x, b.y, b.r);
-        grad.addColorStop(0, `rgba(${cr},${cg},${cb},0.18)`);
-        grad.addColorStop(1, `rgba(${cr},${cg},${cb},0.08)`);
-        ctx.fillStyle = grad;
-        ctx.fill();
-
-        // Symbol text
-        ctx.globalAlpha = pulseOp * 2.2;
-        ctx.fillStyle = `rgba(${cr},${cg},${cb},1)`;
-        ctx.font = `bold ${Math.round(b.r * 0.52)}px 'DM Sans',system-ui,sans-serif`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(b.sym, b.x, b.y);
-
+      }
+      nodes.forEach(n => {
+        ctx.save(); ctx.globalAlpha = n.op;
+        ctx.fillStyle = "rgba(150,100,255,1)";
+        ctx.beginPath(); ctx.arc(n.x,n.y,n.r,0,Math.PI*2); ctx.fill();
         ctx.restore();
       });
 
-      ctx.save(); ctx.strokeStyle="rgba(255,200,0,.15)"; ctx.lineWidth=1.5;
-      [[20,20,1,1],[W-20,20,-1,1],[20,H-20,1,-1],[W-20,H-20,-1,-1]].forEach(([x,y,sx,sy])=>{
-        ctx.beginPath(); ctx.moveTo(x,y+sy*16); ctx.lineTo(x,y); ctx.lineTo(x+sx*16,y); ctx.stroke();
+      // Particles
+      particles.forEach(p => {
+        p.x=(p.x+p.vx+W)%W; p.y=(p.y+p.vy+H)%H; p.phase+=.015;
+        const op = p.op * (.6+.4*Math.sin(p.phase));
+        ctx.save(); ctx.globalAlpha=op;
+        ctx.fillStyle="rgba(180,140,255,1)";
+        ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
+        ctx.restore();
       });
+
+      // ── MAIN HEXAGON ──────────────────────────────────────────────
+      hexAngle += .004;
+      hexPulse += .02;
+      const pulse = Math.sin(hexPulse) * 8;
+      const cx = W * .62, cy = H * .48;
+      const baseSize = Math.min(W, H) * .22;
+
+      // Outer glow rings
+      for (let i = 3; i >= 1; i--) {
+        drawHex(cx, cy, baseSize + pulse + i*28, hexAngle, .08 + i*.04,
+          ["rgba(80,180,255,.3)","rgba(120,80,255,.3)","rgba(80,220,255,.3)"],
+          "rgba(100,160,255,.4)", .5);
+      }
+
+      // Main hex — outer
+      drawHex(cx, cy, baseSize + pulse, hexAngle,
+        .85,
+        ["#7eb8ff","#a084ff","#60e8ff"],
+        "rgba(120,180,255,.9)", 2.5);
+
+      // Main hex — inner rotated
+      drawHex(cx, cy, (baseSize + pulse) * .72, -hexAngle * 1.3,
+        .7,
+        ["#a084ff","#60e8ff","#7eb8ff"],
+        "rgba(160,120,255,.8)", 2);
+
+      // Core hex
+      drawHex(cx, cy, (baseSize + pulse) * .44, hexAngle * .8,
+        .55,
+        ["#60e8ff","#a084ff","#7eb8ff"],
+        "rgba(80,220,255,.7)", 1.5);
+
+      // Center glow dot
+      ctx.save();
+      ctx.globalAlpha = .6 + Math.sin(hexPulse) * .2;
+      const cg = ctx.createRadialGradient(cx, cy, 0, cx, cy, baseSize * .15);
+      cg.addColorStop(0, "rgba(180,220,255,.9)");
+      cg.addColorStop(.5, "rgba(100,160,255,.4)");
+      cg.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = cg; ctx.beginPath(); ctx.arc(cx, cy, baseSize*.15, 0, Math.PI*2); ctx.fill();
+      ctx.restore();
+
+      // Orbiting small hexagons
+      for (let i = 0; i < 3; i++) {
+        const orbitAngle = hexAngle * (i%2===0?1:-1) + (i * Math.PI * 2/3);
+        const orbitR = baseSize * (.95 + Math.sin(hexPulse + i)*0.05);
+        const ox = cx + Math.cos(orbitAngle) * orbitR;
+        const oy = cy + Math.sin(orbitAngle) * orbitR;
+        drawHex(ox, oy, baseSize * .09, hexAngle * 2,
+          .5 + Math.sin(hexPulse + i) * .15,
+          ["#a084ff","#60e8ff","#7eb8ff"],
+          "rgba(120,160,255,.6)", 1.2);
+      }
+
+      // Rotating dashes around hex
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(hexAngle * .5);
+      ctx.globalAlpha = .15;
+      ctx.strokeStyle = "rgba(120,180,255,1)";
+      ctx.lineWidth = 1;
+      ctx.setLineDash([8, 20]);
+      ctx.beginPath();
+      ctx.arc(0, 0, baseSize * 1.28 + pulse*.3, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
       ctx.restore();
 
       animId = requestAnimationFrame(draw);
     }
 
     draw();
-    return () => { cancelAnimationFrame(animId); window.removeEventListener("resize",resize); };
+    return () => { cancelAnimationFrame(animId); window.removeEventListener("resize", resize); };
   }, []);
 
   return (
