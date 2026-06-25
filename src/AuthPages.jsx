@@ -63,9 +63,17 @@ export function LandingPage() {
 
           {/* Left — text + stats */}
           <div style={{ maxWidth:620 }}>
-            <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(120,80,255,.12)", border:"1px solid rgba(120,80,255,.25)", borderRadius:100, padding:"7px 18px", fontSize:12, color:C.purple, fontWeight:600, marginBottom:36, letterSpacing:".04em" }}>
-              <span style={S.ldot}/>
-              FCA Regulated · UK Licensed · Real-time Markets
+            <div style={{ display:"flex", alignItems:"center", gap:10, flexWrap:"wrap", marginBottom:36 }}>
+              <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(120,80,255,.15)", border:"1px solid rgba(120,80,255,.35)", borderRadius:100, padding:"10px 22px", fontSize:14, color:"#fff", fontWeight:700, letterSpacing:".02em", boxShadow:"0 0 20px rgba(120,80,255,.2)" }}>
+                <span style={S.ldot}/>
+                FCA Regulated
+              </div>
+              <div style={{ display:"inline-flex", alignItems:"center", gap:7, background:"rgba(255,255,255,.07)", border:"1px solid rgba(255,255,255,.15)", borderRadius:100, padding:"10px 20px", fontSize:13, color:"rgba(255,255,255,.8)", fontWeight:600 }}>
+                🇬🇧 UK Licensed
+              </div>
+              <div style={{ display:"inline-flex", alignItems:"center", gap:7, background:"rgba(34,197,94,.1)", border:"1px solid rgba(34,197,94,.25)", borderRadius:100, padding:"10px 20px", fontSize:13, color:C.green, fontWeight:600 }}>
+                ⚡ Live Markets
+              </div>
             </div>
 
             <h1 style={{ fontSize:"clamp(42px,6vw,80px)", fontWeight:800, letterSpacing:"-3px", lineHeight:1.0, marginBottom:24, color:"#fff" }}>
