@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-export default function CryptoBackground({ light = false }) {
+export default function CryptoBackground() {
   const canvasRef = useRef(null);
 
   useEffect(() => {
@@ -14,36 +14,43 @@ export default function CryptoBackground({ light = false }) {
     const resize = () => { W = window.innerWidth; H = window.innerHeight; canvas.width = W; canvas.height = H; };
     window.addEventListener("resize", resize);
 
-    // ── PARTICLES ─────────────────────────────────────────────────────
-    const particles = Array.from({ length: 60 }, () => ({
+    // ── PARTICLES (more visible) ────────────────────────────────────────
+    const particles = Array.from({ length: 90 }, () => ({
       x: Math.random() * W, y: Math.random() * H,
-      vx: (Math.random() - .5) * .3, vy: (Math.random() - .5) * .3,
-      r: .5 + Math.random() * 1.5,
-      op: .1 + Math.random() * .2,
+      vx: (Math.random() - .5) * .25, vy: (Math.random() - .5) * .25,
+      r: .8 + Math.random() * 2,
+      op: .15 + Math.random() * .3,
       phase: Math.random() * Math.PI * 2,
     }));
 
-    // ── NETWORK NODES ─────────────────────────────────────────────────
-    const nodes = Array.from({ length: 35 }, () => ({
+    // ── NETWORK NODES ────────────────────────────────────────────────────
+    const nodes = Array.from({ length: 40 }, () => ({
       x: Math.random() * W, y: Math.random() * H,
-      vx: (Math.random() - .5) * .25, vy: (Math.random() - .5) * .25,
-      r: 1.5 + Math.random() * 2,
-      op: .12 + Math.random() * .18,
+      vx: (Math.random() - .5) * .2, vy: (Math.random() - .5) * .2,
+      r: 1.8 + Math.random() * 2.2,
+      op: .18 + Math.random() * .25,
     }));
 
-    // ── HEXAGON ANIMATION ─────────────────────────────────────────────
+    // ── FLOATING ORBS (depth layer) ──────────────────────────────────────
+    const orbs = Array.from({ length: 5 }, () => ({
+      x: Math.random() * W, y: Math.random() * H,
+      r: 80 + Math.random() * 160,
+      vx: (Math.random() - .5) * .15, vy: (Math.random() - .5) * .15,
+      op: .04 + Math.random() * .05,
+      hue: Math.random() > .5 ? "purple" : "blue",
+    }));
+
     let hexAngle = 0;
     let hexPulse = 0;
 
-    function drawHex(cx, cy, size, angle, alpha, strokeColor, glowColor, lineW = 2) {
+    function drawHex(cx, cy, size, angle, alpha, strokeColors, glowColor, lineW, fillAlpha = 0.06) {
       ctx.save();
       ctx.globalAlpha = alpha;
       ctx.translate(cx, cy);
       ctx.rotate(angle);
 
-      // Glow
       ctx.shadowColor = glowColor;
-      ctx.shadowBlur = 40;
+      ctx.shadowBlur = 50;
 
       ctx.beginPath();
       for (let i = 0; i < 6; i++) {
@@ -54,19 +61,19 @@ export default function CryptoBackground({ light = false }) {
       }
       ctx.closePath();
 
-      // Gradient stroke
       const grad = ctx.createLinearGradient(-size, -size, size, size);
-      grad.addColorStop(0, strokeColor[0]);
-      grad.addColorStop(.5, strokeColor[1]);
-      grad.addColorStop(1, strokeColor[2] || strokeColor[0]);
+      grad.addColorStop(0, strokeColors[0]);
+      grad.addColorStop(.5, strokeColors[1]);
+      grad.addColorStop(1, strokeColors[2] || strokeColors[0]);
       ctx.strokeStyle = grad;
       ctx.lineWidth = lineW;
       ctx.stroke();
 
-      // Inner fill
-      const fill = ctx.createRadialGradient(0, 0, 0, 0, 0, size);
-      fill.addColorStop(0, `rgba(120,80,255,${alpha * .08})`);
-      fill.addColorStop(1, `rgba(80,160,255,${alpha * .03})`);
+      ctx.shadowBlur = 0;
+      const fill = ctx.createRadialGradient(-size*.2, -size*.2, 0, 0, 0, size);
+      fill.addColorStop(0, `rgba(140,100,255,${fillAlpha})`);
+      fill.addColorStop(.6, `rgba(100,160,255,${fillAlpha*.5})`);
+      fill.addColorStop(1, `rgba(60,40,140,${fillAlpha*.15})`);
       ctx.fillStyle = fill;
       ctx.fill();
 
@@ -76,25 +83,42 @@ export default function CryptoBackground({ light = false }) {
     function draw() {
       ctx.clearRect(0, 0, W, H);
 
-      // Background gradient — deep navy/purple like BCB
-      const bg = ctx.createRadialGradient(W * .35, H * .4, 0, W * .5, H * .5, W * .85);
-      bg.addColorStop(0,   "rgba(60,20,120,.55)");
-      bg.addColorStop(.35, "rgba(20,10,80,.4)");
-      bg.addColorStop(.7,  "rgba(8,6,40,.3)");
-      bg.addColorStop(1,   "rgba(0,0,0,0)");
+      // Base background gradient — richer, deeper
+      const bg = ctx.createRadialGradient(W * .38, H * .42, 0, W * .5, H * .5, W * .9);
+      bg.addColorStop(0,   "rgba(75,30,150,.6)");
+      bg.addColorStop(.3,  "rgba(40,18,110,.45)");
+      bg.addColorStop(.6,  "rgba(18,10,60,.35)");
+      bg.addColorStop(1,   "rgba(2,2,10,.2)");
       ctx.fillStyle = bg;
       ctx.fillRect(0, 0, W, H);
 
-      // Secondary purple glow top-left
-      const bg2 = ctx.createRadialGradient(W * .15, H * .2, 0, W * .15, H * .2, W * .4);
-      bg2.addColorStop(0,  "rgba(100,40,200,.18)");
+      // Top-left accent glow
+      const bg2 = ctx.createRadialGradient(W * .1, H * .1, 0, W * .1, H * .1, W * .5);
+      bg2.addColorStop(0,  "rgba(130,60,255,.22)");
       bg2.addColorStop(1,  "rgba(0,0,0,0)");
       ctx.fillStyle = bg2; ctx.fillRect(0, 0, W, H);
 
-      // Subtle grid
-      ctx.strokeStyle = "rgba(120,80,255,.06)"; ctx.lineWidth = .5;
-      for (let c = 0; c <= 24; c++) { const x = (W/24)*c; ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
-      for (let r = 0; r <= 14; r++) { const y = (H/14)*r; ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+      // Bottom-right cyan glow for balance
+      const bg3 = ctx.createRadialGradient(W * .85, H * .8, 0, W * .85, H * .8, W * .45);
+      bg3.addColorStop(0,  "rgba(60,160,255,.14)");
+      bg3.addColorStop(1,  "rgba(0,0,0,0)");
+      ctx.fillStyle = bg3; ctx.fillRect(0, 0, W, H);
+
+      // Floating depth orbs
+      orbs.forEach(o => {
+        o.x = (o.x + o.vx + W) % W; o.y = (o.y + o.vy + H) % H;
+        const grad = ctx.createRadialGradient(o.x, o.y, 0, o.x, o.y, o.r);
+        const col = o.hue === "purple" ? "140,90,255" : "80,170,255";
+        grad.addColorStop(0, `rgba(${col},${o.op})`);
+        grad.addColorStop(1, "rgba(0,0,0,0)");
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.arc(o.x, o.y, o.r, 0, Math.PI*2); ctx.fill();
+      });
+
+      // Grid — slightly more visible
+      ctx.strokeStyle = "rgba(140,100,255,.08)"; ctx.lineWidth = .5;
+      for (let c = 0; c <= 24; c++) { const x=(W/24)*c; ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+      for (let r = 0; r <= 14; r++) { const y=(H/14)*r; ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
 
       // Node network
       nodes.forEach(n => { n.x=(n.x+n.vx+W)%W; n.y=(n.y+n.vy+H)%H; });
@@ -102,97 +126,109 @@ export default function CryptoBackground({ light = false }) {
         for (let j = i+1; j < nodes.length; j++) {
           const dx = nodes[i].x-nodes[j].x, dy = nodes[i].y-nodes[j].y;
           const dist = Math.sqrt(dx*dx+dy*dy);
-          if (dist < 160) {
-            ctx.strokeStyle = `rgba(120,80,255,${(1-dist/160)*.07})`;
-            ctx.lineWidth = .5;
+          if (dist < 170) {
+            ctx.strokeStyle = `rgba(140,100,255,${(1-dist/170)*.12})`;
+            ctx.lineWidth = .6;
             ctx.beginPath(); ctx.moveTo(nodes[i].x,nodes[i].y); ctx.lineTo(nodes[j].x,nodes[j].y); ctx.stroke();
           }
         }
       }
       nodes.forEach(n => {
         ctx.save(); ctx.globalAlpha = n.op;
-        ctx.fillStyle = "rgba(150,100,255,1)";
+        ctx.shadowColor = "rgba(160,120,255,.8)"; ctx.shadowBlur = 6;
+        ctx.fillStyle = "rgba(170,130,255,1)";
         ctx.beginPath(); ctx.arc(n.x,n.y,n.r,0,Math.PI*2); ctx.fill();
         ctx.restore();
       });
 
-      // Particles
+      // Particles — brighter
       particles.forEach(p => {
-        p.x=(p.x+p.vx+W)%W; p.y=(p.y+p.vy+H)%H; p.phase+=.015;
+        p.x=(p.x+p.vx+W)%W; p.y=(p.y+p.vy+H)%H; p.phase+=.018;
         const op = p.op * (.6+.4*Math.sin(p.phase));
         ctx.save(); ctx.globalAlpha=op;
-        ctx.fillStyle="rgba(180,140,255,1)";
+        ctx.fillStyle="rgba(200,170,255,1)";
         ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
         ctx.restore();
       });
 
-      // ── MAIN HEXAGON ──────────────────────────────────────────────
+      // ── MAIN HEXAGON — with real depth ──────────────────────────────
       hexAngle += .004;
       hexPulse += .02;
       const pulse = Math.sin(hexPulse) * 8;
       const cx = W * .62, cy = H * .48;
-      const baseSize = Math.min(W, H) * .22;
+      const baseSize = Math.min(W, H) * .23;
+
+      // Outer ambient glow ring (soft halo)
+      const haloGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, baseSize * 1.8);
+      haloGrad.addColorStop(0, "rgba(120,90,255,.12)");
+      haloGrad.addColorStop(.5, "rgba(80,160,255,.06)");
+      haloGrad.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = haloGrad;
+      ctx.beginPath(); ctx.arc(cx, cy, baseSize*1.8, 0, Math.PI*2); ctx.fill();
 
       // Outer glow rings
       for (let i = 3; i >= 1; i--) {
-        drawHex(cx, cy, baseSize + pulse + i*28, hexAngle, .08 + i*.04,
-          ["rgba(80,180,255,.3)","rgba(120,80,255,.3)","rgba(80,220,255,.3)"],
-          "rgba(100,160,255,.4)", .5);
+        drawHex(cx, cy, baseSize + pulse + i*30, hexAngle, .1 + i*.05,
+          ["rgba(100,180,255,.4)","rgba(140,90,255,.4)","rgba(90,220,255,.4)"],
+          "rgba(120,170,255,.5)", .6, 0.02);
       }
 
-      // Main hex — outer
-      drawHex(cx, cy, baseSize + pulse, hexAngle,
-        .85,
-        ["#7eb8ff","#a084ff","#60e8ff"],
-        "rgba(120,180,255,.9)", 2.5);
+      // Main hex — outer with strong fill for depth
+      drawHex(cx, cy, baseSize + pulse, hexAngle, .95,
+        ["#8ec4ff","#b094ff","#70eaff"],
+        "rgba(140,190,255,1)", 3, 0.1);
 
       // Main hex — inner rotated
-      drawHex(cx, cy, (baseSize + pulse) * .72, -hexAngle * 1.3,
-        .7,
-        ["#a084ff","#60e8ff","#7eb8ff"],
-        "rgba(160,120,255,.8)", 2);
+      drawHex(cx, cy, (baseSize + pulse) * .7, -hexAngle * 1.3, .85,
+        ["#b094ff","#70eaff","#8ec4ff"],
+        "rgba(170,130,255,.9)", 2.4, 0.08);
 
       // Core hex
-      drawHex(cx, cy, (baseSize + pulse) * .44, hexAngle * .8,
-        .55,
-        ["#60e8ff","#a084ff","#7eb8ff"],
-        "rgba(80,220,255,.7)", 1.5);
+      drawHex(cx, cy, (baseSize + pulse) * .42, hexAngle * .8, .75,
+        ["#70eaff","#b094ff","#8ec4ff"],
+        "rgba(90,230,255,.9)", 1.8, 0.12);
 
-      // Center glow dot
+      // Bright center glow dot
       ctx.save();
-      ctx.globalAlpha = .6 + Math.sin(hexPulse) * .2;
-      const cg = ctx.createRadialGradient(cx, cy, 0, cx, cy, baseSize * .15);
-      cg.addColorStop(0, "rgba(180,220,255,.9)");
-      cg.addColorStop(.5, "rgba(100,160,255,.4)");
+      ctx.globalAlpha = .8 + Math.sin(hexPulse) * .15;
+      const cg = ctx.createRadialGradient(cx, cy, 0, cx, cy, baseSize * .18);
+      cg.addColorStop(0, "rgba(220,235,255,1)");
+      cg.addColorStop(.4, "rgba(150,180,255,.7)");
       cg.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.fillStyle = cg; ctx.beginPath(); ctx.arc(cx, cy, baseSize*.15, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = cg; ctx.beginPath(); ctx.arc(cx, cy, baseSize*.18, 0, Math.PI*2); ctx.fill();
       ctx.restore();
 
-      // Orbiting small hexagons
+      // Orbiting small hexagons — brighter with trail glow
       for (let i = 0; i < 3; i++) {
         const orbitAngle = hexAngle * (i%2===0?1:-1) + (i * Math.PI * 2/3);
-        const orbitR = baseSize * (.95 + Math.sin(hexPulse + i)*0.05);
+        const orbitR = baseSize * (.98 + Math.sin(hexPulse + i)*0.06);
         const ox = cx + Math.cos(orbitAngle) * orbitR;
         const oy = cy + Math.sin(orbitAngle) * orbitR;
-        drawHex(ox, oy, baseSize * .09, hexAngle * 2,
-          .5 + Math.sin(hexPulse + i) * .15,
-          ["#a084ff","#60e8ff","#7eb8ff"],
-          "rgba(120,160,255,.6)", 1.2);
+        drawHex(ox, oy, baseSize * .1, hexAngle * 2,
+          .65 + Math.sin(hexPulse + i) * .2,
+          ["#b094ff","#70eaff","#8ec4ff"],
+          "rgba(150,180,255,.8)", 1.5, 0.15);
       }
 
-      // Rotating dashes around hex
+      // Rotating dashed orbit ring
       ctx.save();
       ctx.translate(cx, cy);
       ctx.rotate(hexAngle * .5);
-      ctx.globalAlpha = .15;
-      ctx.strokeStyle = "rgba(120,180,255,1)";
-      ctx.lineWidth = 1;
-      ctx.setLineDash([8, 20]);
+      ctx.globalAlpha = .22;
+      ctx.strokeStyle = "rgba(150,190,255,1)";
+      ctx.lineWidth = 1.2;
+      ctx.setLineDash([8, 22]);
       ctx.beginPath();
-      ctx.arc(0, 0, baseSize * 1.28 + pulse*.3, 0, Math.PI * 2);
+      ctx.arc(0, 0, baseSize * 1.32 + pulse*.3, 0, Math.PI * 2);
       ctx.stroke();
       ctx.setLineDash([]);
       ctx.restore();
+
+      // Vignette for depth at edges
+      const vg = ctx.createRadialGradient(W/2, H/2, H*.3, W/2, H/2, H*.85);
+      vg.addColorStop(0, "rgba(0,0,0,0)");
+      vg.addColorStop(1, "rgba(0,0,0,.35)");
+      ctx.fillStyle = vg; ctx.fillRect(0,0,W,H);
 
       animId = requestAnimationFrame(draw);
     }
