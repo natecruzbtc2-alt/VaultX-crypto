@@ -12,9 +12,9 @@ export const C = {
 
 export const S = {
   app:  { fontFamily:"'DM Sans',system-ui,sans-serif", background:C.bg, color:C.text, minHeight:"100vh", fontSize:14, lineHeight:1.5 },
-  nav:  { background:"rgba(6,4,15,.85)", backdropFilter:"blur(24px)", borderBottom:`1px solid rgba(120,80,255,.12)`, padding:"0 32px", height:66, display:"flex", alignItems:"center", justifyContent:"space-between", position:"sticky", top:0, zIndex:100 },
-  logo: { display:"flex", alignItems:"center", gap:10, fontSize:17, fontWeight:800, letterSpacing:"-.5px", cursor:"pointer", textTransform:"uppercase", color:C.text },
-  logoMark: { width:38, height:38, background:`linear-gradient(135deg,#7040e0,#a084ff)`, borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, fontWeight:900, color:"#fff", boxShadow:`0 0 24px rgba(120,80,255,.5)` },
+  nav:  { background:"rgba(6,4,15,.78)", backdropFilter:"blur(28px) saturate(140%)", borderBottom:`1px solid rgba(140,100,255,.14)`, padding:"0 36px", height:68, display:"flex", alignItems:"center", justifyContent:"space-between", position:"sticky", top:0, zIndex:100, boxShadow:"0 1px 0 rgba(140,100,255,.06), 0 12px 40px rgba(0,0,0,.25)" },
+  logo: { display:"flex", alignItems:"center", gap:11, fontSize:18, fontWeight:800, letterSpacing:"-.5px", cursor:"pointer", color:C.text },
+  logoMark: { width:38, height:38, background:`linear-gradient(135deg,#7040e0,#a084ff)`, borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, fontWeight:900, color:"#fff", boxShadow:`0 0 24px rgba(120,80,255,.5), inset 0 1px 0 rgba(255,255,255,.25)` },
   ticker: { background:"rgba(10,8,24,.9)", borderBottom:`1px solid rgba(120,80,255,.1)`, padding:"7px 0", overflow:"hidden", whiteSpace:"nowrap" },
   card: { background:`linear-gradient(145deg,rgba(120,80,255,.07),rgba(80,160,255,.03))`, border:`1px solid rgba(120,80,255,.18)`, borderRadius:16, padding:24, boxShadow:`0 4px 30px rgba(0,0,0,.4), inset 0 1px 0 rgba(120,80,255,.1)` },
   scard: { background:`rgba(120,80,255,.05)`, border:`1px solid rgba(120,80,255,.1)`, borderRadius:12, padding:16 },
@@ -55,7 +55,7 @@ export const btn = (v="primary") => ({
   color:
     v==="primary" ? "#06040f" :
     v==="ghost"   ? C.text2 : "#fff",
-  outline: v==="ghost" ? `1px solid rgba(255,255,255,.2)` : "none",
+  outline: v==="ghost" ? `1px solid rgba(255,255,255,.18)` : "none",
   boxShadow: v==="primary" ? `0 4px 20px rgba(255,255,255,.15)` : v==="success" ? `0 4px 14px rgba(34,197,94,.25)` : "none",
   transition:"filter .15s, transform .1s",
   minHeight:38, whiteSpace:"nowrap", userSelect:"none",
@@ -81,6 +81,9 @@ export const globalCSS = `
   .vx-fade-in { animation: vxFadeIn .4s ease forwards; }
   .vx-logo-text { color: #ffffff; font-weight: 800; letter-spacing: -.5px; }
   .vx-nav-mid { flex:1; display:flex; justify-content:center; }
+  .vx-nav-link { position:relative; }
+  .vx-nav-link::after { content:""; position:absolute; bottom:-4px; left:50%; transform:translateX(-50%); width:0; height:2px; background:linear-gradient(90deg,#a084ff,#60e8ff); transition:width .2s; border-radius:2px; }
+  .vx-nav-link:hover::after { width:70%; }
   @media(max-width:768px){
     .vx-sidebar { display:none !important; }
     .vx-dash-body { flex-direction:column !important; }

@@ -6,13 +6,13 @@ function PageNav() {
   const { setView } = useApp();
   return (
     <nav style={S.nav}>
-      <div style={{ display:"flex", alignItems:"center", gap:10, cursor:"pointer" }} onClick={() => setView("landing")}>
-        <img src="/logo.png" style={{ width:36, height:36, borderRadius:10, objectFit:"cover" }} alt="VaultX" onError={e=>{e.target.style.display="none";}}/>
-        <span style={{ fontSize:17, fontWeight:800, textTransform:"uppercase", letterSpacing:"-.5px", color:C.text }}>VaultXcrypto</span>
+      <div style={{ display:"flex", alignItems:"center", gap:11, cursor:"pointer" }} onClick={() => setView("landing")}>
+        <div style={{ width:38, height:38, background:"linear-gradient(135deg,#7040e0,#a084ff)", borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, fontWeight:900, color:"#fff", boxShadow:"0 0 24px rgba(120,80,255,.5)" }}>V</div>
+        <span style={{ fontSize:18, fontWeight:800, letterSpacing:"-.5px", color:"#fff" }}>VaultX</span>
       </div>
-      <div style={{ display:"flex", gap:12 }}>
-        <button style={{ ...btn("ghost"), padding:"7px 16px", fontSize:13 }} onClick={() => setView("login")}>Sign In</button>
-        <button style={{ ...btn(), padding:"7px 16px", fontSize:13 }} onClick={() => setView("register")}>Get Started</button>
+      <div style={{ display:"flex", gap:10 }}>
+        <button style={{ ...btn("ghost"), padding:"9px 20px", fontSize:13, borderRadius:8, letterSpacing:".02em" }} onClick={() => setView("login")}>Sign In</button>
+        <button style={{ ...btn(), padding:"9px 22px", fontSize:13, borderRadius:8, letterSpacing:".02em" }} onClick={() => setView("register")}>Get Started</button>
       </div>
     </nav>
   );
@@ -40,33 +40,45 @@ export function Footer() {
   };
 
   return (
-    <footer style={{ background:"#04030a", borderTop:`1px solid ${C.border2}`, padding:"48px 24px 24px", marginTop:60 }}>
-      <div style={{ maxWidth:1140, margin:"0 auto" }}>
-        <div style={{ display:"grid", gridTemplateColumns:"2fr 1fr 1fr 1fr", gap:40, marginBottom:40 }}>
+    <footer style={{ background:"linear-gradient(180deg, transparent, rgba(8,5,20,.6) 30%, #050310 100%)", borderTop:`1px solid rgba(140,100,255,.12)`, padding:"72px 32px 0", marginTop:0, position:"relative" }}>
+      {/* Top glow line */}
+      <div style={{ position:"absolute", top:-1, left:"10%", right:"10%", height:1, background:"linear-gradient(90deg, transparent, rgba(150,100,255,.5), rgba(100,200,255,.4), transparent)" }}/>
+
+      <div style={{ maxWidth:1200, margin:"0 auto" }}>
+        <div style={{ display:"grid", gridTemplateColumns:"1.4fr 1fr 1fr 1fr", gap:48, marginBottom:48, paddingBottom:48, borderBottom:"1px solid rgba(140,100,255,.1)" }}>
           {/* Brand */}
           <div>
-            <div style={{ display:"flex", alignItems:"center", gap:10, marginBottom:16 }}>
-              <img src="/logo.png" style={{ width:36, height:36, borderRadius:10, objectFit:"cover" }} alt="VaultX" onError={e=>{e.target.style.display="none";}}/>
-              <span style={{ fontSize:17, fontWeight:800, color:C.text, textTransform:"uppercase", letterSpacing:"-.5px" }}>VaultXcrypto</span>
+            <div style={{ display:"flex", alignItems:"center", gap:11, marginBottom:18 }}>
+              <div style={{ width:38, height:38, background:"linear-gradient(135deg,#7040e0,#a084ff)", borderRadius:10, display:"flex", alignItems:"center", justifyContent:"center", fontSize:14, fontWeight:900, color:"#fff", boxShadow:"0 0 24px rgba(120,80,255,.5)" }}>V</div>
+              <span style={{ fontSize:18, fontWeight:800, color:"#fff", letterSpacing:"-.5px" }}>VaultX</span>
             </div>
-            <p style={{ fontSize:13, color:C.text3, lineHeight:1.8, maxWidth:280 }}>
+            <p style={{ fontSize:13.5, color:"rgba(255,255,255,.55)", lineHeight:1.85, maxWidth:300, marginBottom:20 }}>
               VaultX Ltd is a UK-registered cryptocurrency trading and portfolio management platform providing secure, real-time access to global crypto markets.
             </p>
-            <div style={{ marginTop:16, fontSize:12, color:C.text3, lineHeight:1.9 }}>
-              <div>🏢 VaultX Ltd — Registered in England & Wales</div>
-              <div>📍 71-75 Shelton Street, London, WC2H 9JQ</div>
-              <div style={{cursor:"pointer"}} onClick={() => { if(window.Tawk_API && window.Tawk_API.maximize) { window.Tawk_API.maximize(); } else { window.open('https://tawk.to/chat/6a2e5fe88b30661d42bef351/1jr2id950', '_blank'); } }}>💬 Live Chat Support</div>
-              <div>🔢 Company No. 14782341</div>
+            <div style={{ display:"flex", flexDirection:"column", gap:10 }}>
+              {[
+                ["🏢","VaultX Ltd — Registered in England & Wales"],
+                ["📍","71-75 Shelton Street, London, WC2H 9JQ"],
+                ["🔢","Company No. 14782341"],
+              ].map(([icon,text],i) => (
+                <div key={i} style={{ display:"flex", alignItems:"flex-start", gap:8, fontSize:12.5, color:"rgba(255,255,255,.45)", lineHeight:1.5 }}>
+                  <span style={{ flexShrink:0 }}>{icon}</span><span>{text}</span>
+                </div>
+              ))}
+              <div style={{ display:"flex", alignItems:"center", gap:8, fontSize:12.5, color:"#a084ff", cursor:"pointer", fontWeight:600, marginTop:4 }}
+                onClick={() => { if(window.Tawk_API && window.Tawk_API.maximize) { window.Tawk_API.maximize(); } else { window.open('https://tawk.to/chat/6a2e5fe88b30661d42bef351/1jr2id950', '_blank'); } }}>
+                💬 Live Chat Support →
+              </div>
             </div>
           </div>
 
           {/* Platform */}
           <div>
-            <div style={{ fontSize:12, fontWeight:700, color:C.text, marginBottom:16, textTransform:"uppercase", letterSpacing:".08em" }}>Platform</div>
+            <div style={{ fontSize:12, fontWeight:700, color:"#fff", marginBottom:20, textTransform:"uppercase", letterSpacing:".1em" }}>Platform</div>
             {[["Trading","trade"],["Portfolio","portfolio"],["Staking","staking"],["Live Markets","markets"],["Wallet","wallet"]].map(([l,p]) => (
-              <div key={l} style={{ marginBottom:10 }}>
-                <span style={{ fontSize:13, color:C.text3, cursor:"pointer" }}
-                  onMouseEnter={e=>e.target.style.color=C.purple3} onMouseLeave={e=>e.target.style.color=C.text3}
+              <div key={l} style={{ marginBottom:13 }}>
+                <span style={{ fontSize:13.5, color:"rgba(255,255,255,.5)", cursor:"pointer", transition:"color .15s" }}
+                  onMouseEnter={e=>e.target.style.color="#a084ff"} onMouseLeave={e=>e.target.style.color="rgba(255,255,255,.5)"}
                   onClick={() => navigate(p)}>{l}</span>
               </div>
             ))}
@@ -74,11 +86,11 @@ export function Footer() {
 
           {/* Company */}
           <div>
-            <div style={{ fontSize:12, fontWeight:700, color:C.text, marginBottom:16, textTransform:"uppercase", letterSpacing:".08em" }}>Company</div>
+            <div style={{ fontSize:12, fontWeight:700, color:"#fff", marginBottom:20, textTransform:"uppercase", letterSpacing:".1em" }}>Company</div>
             {[["About Us","about"],["Contact Us","contact"],["Privacy Policy","privacy"],["Terms of Service","terms"],["Cookie Policy","cookies"]].map(([l,p]) => (
-              <div key={l} style={{ marginBottom:10 }}>
-                <span style={{ fontSize:13, color:C.text3, cursor:"pointer" }}
-                  onMouseEnter={e=>e.target.style.color=C.purple3} onMouseLeave={e=>e.target.style.color=C.text3}
+              <div key={l} style={{ marginBottom:13 }}>
+                <span style={{ fontSize:13.5, color:"rgba(255,255,255,.5)", cursor:"pointer", transition:"color .15s" }}
+                  onMouseEnter={e=>e.target.style.color="#a084ff"} onMouseLeave={e=>e.target.style.color="rgba(255,255,255,.5)"}
                   onClick={() => navigate(p)}>{l}</span>
               </div>
             ))}
@@ -86,11 +98,11 @@ export function Footer() {
 
           {/* Support */}
           <div>
-            <div style={{ fontSize:12, fontWeight:700, color:C.text, marginBottom:16, textTransform:"uppercase", letterSpacing:".08em" }}>Support</div>
+            <div style={{ fontSize:12, fontWeight:700, color:"#fff", marginBottom:20, textTransform:"uppercase", letterSpacing:".1em" }}>Support</div>
             {[["Help Centre","help"],["Security","security"],["Fees & Limits","fees"],["Platform Status","status"],["Report Issue","contact"]].map(([l,p]) => (
-              <div key={l} style={{ marginBottom:10 }}>
-                <span style={{ fontSize:13, color:C.text3, cursor:"pointer" }}
-                  onMouseEnter={e=>e.target.style.color=C.purple3} onMouseLeave={e=>e.target.style.color=C.text3}
+              <div key={l} style={{ marginBottom:13 }}>
+                <span style={{ fontSize:13.5, color:"rgba(255,255,255,.5)", cursor:"pointer", transition:"color .15s" }}
+                  onMouseEnter={e=>e.target.style.color="#a084ff"} onMouseLeave={e=>e.target.style.color="rgba(255,255,255,.5)"}
                   onClick={() => navigate(p)}>{l}</span>
               </div>
             ))}
@@ -98,20 +110,29 @@ export function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div style={{ borderTop:`1px solid ${C.border2}`, paddingTop:24, display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:12 }}>
-          <div style={{ fontSize:12, color:C.text3 }}>
-            © {new Date().getFullYear()} VaultX Ltd. All rights reserved. Registered in England & Wales. Company No. 14782341
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:16, paddingBottom:28 }}>
+          <div style={{ fontSize:12.5, color:"rgba(255,255,255,.4)" }}>
+            © {new Date().getFullYear()} VaultX Ltd. All rights reserved. Company No. 14782341
           </div>
-          <div style={{ display:"flex", gap:20 }}>
-            {[["Privacy Policy","privacy"],["Terms of Service","terms"],["Cookies","cookies"]].map(([l,p]) => (
-              <span key={l} style={{ fontSize:12, color:C.text3, cursor:"pointer" }}
-                onMouseEnter={e=>e.target.style.color=C.purple3} onMouseLeave={e=>e.target.style.color=C.text3}
+          <div style={{ display:"flex", gap:24, alignItems:"center" }}>
+            {[["Privacy","privacy"],["Terms","terms"],["Cookies","cookies"]].map(([l,p]) => (
+              <span key={l} style={{ fontSize:12.5, color:"rgba(255,255,255,.4)", cursor:"pointer", transition:"color .15s" }}
+                onMouseEnter={e=>e.target.style.color="#a084ff"} onMouseLeave={e=>e.target.style.color="rgba(255,255,255,.4)"}
                 onClick={() => navigate(p)}>{l}</span>
             ))}
+            <div style={{ display:"flex", gap:8, marginLeft:4 }}>
+              {["🐦","💬","📧"].map((ic,i) => (
+                <div key={i} style={{ width:32, height:32, borderRadius:8, background:"rgba(140,100,255,.08)", border:"1px solid rgba(140,100,255,.18)", display:"flex", alignItems:"center", justifyContent:"center", fontSize:13, cursor:"pointer", transition:"all .15s" }}
+                  onMouseEnter={e=>{e.currentTarget.style.background="rgba(140,100,255,.18)";e.currentTarget.style.borderColor="rgba(140,100,255,.4)";}}
+                  onMouseLeave={e=>{e.currentTarget.style.background="rgba(140,100,255,.08)";e.currentTarget.style.borderColor="rgba(140,100,255,.18)";}}>
+                  {ic}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
-        <div style={{ marginTop:16, fontSize:11, color:C.text3, lineHeight:1.7, opacity:.7 }}>
+        <div style={{ borderTop:"1px solid rgba(140,100,255,.08)", padding:"20px 0", fontSize:11.5, color:"rgba(255,255,255,.32)", lineHeight:1.8 }}>
           ⚠️ Cryptocurrency trading involves significant risk. The value of cryptocurrencies can go up or down and you may lose your entire investment.
           VaultX Ltd is not a regulated financial advisor. Please ensure you understand the risks before trading.
         </div>
