@@ -168,7 +168,7 @@ export function AdminUsers() {
             </select>
           </div>
         </div>
-        <button style={{ ...btn("success"), padding:"11px 24px", fontSize:14, opacity:saving?0.7:1 }} onClick={doAdd} disabled={saving}>
+        <button style={{ ...btn("success"), padding:"11px 24px", fontSize:14, opacity:saving?.7:1 }} onClick={doAdd} disabled={saving}>
           {saving ? "⏳ Saving..." : "+ Add Client"}
         </button>
       </div>
@@ -913,6 +913,10 @@ export function AgentDepositBoard() {
   const [companyName,   setCompanyName]   = useState(() => localStorage.getItem("vx_board_company") || "");
   const [companyTag,    setCompanyTag]    = useState(() => localStorage.getItem("vx_board_tag")     || "");
   const [editingBrand,  setEditingBrand]  = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  });
 
   // Load brand settings from Supabase when authed
   useEffect(() => {
@@ -1033,9 +1037,19 @@ export function AgentDepositBoard() {
   const runMap = {};
   rev.forEach(d => { run += d.amount; runMap[d.id] = run; });
 
-  const total  = deposits.reduce((a,d) => a+d.amount, 0);
-  const crypto = deposits.filter(d=>d.method==="Crypto").reduce((a,d)=>a+d.amount,0);
-  const wire   = deposits.filter(d=>d.method==="Wire").reduce((a,d)=>a+d.amount,0);
+  // Month filtering
+  const allMonths = [...new Set(deposits.map(d => d.date ? d.date.slice(0,7) : '').filter(Boolean))].sort().reverse();
+  const filteredDeposits = selectedMonth === 'all' ? deposits : deposits.filter(d => d.date && d.date.slice(0,7) === selectedMonth);
+
+  const total  = filteredDeposits.reduce((a,d) => a+d.amount, 0);
+  const crypto = filteredDeposits.filter(d=>d.method==="Crypto").reduce((a,d)=>a+d.amount,0);
+  const wire   = filteredDeposits.filter(d=>d.method==="Wire").reduce((a,d)=>a+d.amount,0);
+
+  // Recalculate running totals for filtered deposits
+  const filteredRev = [...filteredDeposits].reverse();
+  let filteredRun = 0;
+  const filteredRunMap = {};
+  filteredRev.forEach(d => { filteredRun += d.amount; filteredRunMap[d.id] = filteredRun; });
 
   const styles = `@keyframes vxFall{0%{transform:translateY(0) rotate(0);opacity:1}100%{transform:translateY(100vh) rotate(600deg);opacity:0}}`;
 
@@ -1102,12 +1116,35 @@ export function AgentDepositBoard() {
       )}
 
       {/* Header */}
-      <div style={{ ...S.rowsb, marginBottom:22 }}>
+      <div style={{ ...S.rowsb, marginBottom:16 }}>
         <div>
           <div style={{ ...S.hd, color:"#ffc800" }}>Agent Deposit Board</div>
           <div style={S.sub}>Log and track all agent deposits</div>
         </div>
         <button style={{ ...btn("ghost"), padding:"7px 16px", fontSize:12 }} onClick={() => setAuthed(false)}>🔒 Lock</button>
+      </div>
+
+      {/* Month Filter */}
+      <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:22, flexWrap:"wrap" }}>
+        <span style={{ fontSize:11, color:C.text3, fontWeight:700, textTransform:"uppercase", letterSpacing:".06em", marginRight:4 }}>📅 Month:</span>
+        <button
+          onClick={() => setSelectedMonth("all")}
+          style={{ padding:"6px 14px", borderRadius:20, border:`1px solid ${selectedMonth==="all"?"rgba(120,80,255,.6)":"rgba(120,80,255,.2)"}`, background:selectedMonth==="all"?"rgba(120,80,255,.2)":"transparent", color:selectedMonth==="all"?"#fff":C.text3, fontSize:12, fontWeight:700, cursor:"pointer", fontFamily:"inherit", transition:"all .15s" }}>
+          All Time
+        </button>
+        {allMonths.map(m => {
+          const [yr, mo] = m.split("-");
+          const label = new Date(parseInt(yr), parseInt(mo)-1, 1).toLocaleDateString("en-GB", { month:"short", year:"numeric" });
+          const isActive = selectedMonth === m;
+          const isCurrentMonth = m === new Date().toISOString().slice(0,7);
+          return (
+            <button key={m}
+              onClick={() => setSelectedMonth(m)}
+              style={{ padding:"6px 16px", borderRadius:20, border:`1px solid ${isActive?"rgba(255,200,0,.6)":isCurrentMonth?"rgba(255,200,0,.25)":"rgba(120,80,255,.2)"}`, background:isActive?"rgba(255,200,0,.18)":isCurrentMonth?"rgba(255,200,0,.06)":"transparent", color:isActive?"#ffc800":isCurrentMonth?"rgba(255,200,0,.8)":C.text3, fontSize:12, fontWeight:isActive||isCurrentMonth?700:400, cursor:"pointer", fontFamily:"inherit", transition:"all .15s" }}>
+              {label}{isCurrentMonth?" ✦":""}
+            </button>
+          );
+        })}
       </div>
 
       {/* Stats */}
@@ -1187,12 +1224,12 @@ export function AgentDepositBoard() {
           <tbody>
             {loading2 ? (
               <tr><td colSpan={7} style={{ ...S.td, textAlign:"center", padding:"40px", color:C.text3 }}>Loading deposits from cloud…</td></tr>
-            ) : deposits.length === 0 ? (
+            ) : filteredDeposits.length === 0 ? (
               <tr><td colSpan={6} style={{ ...S.td, textAlign:"center", padding:"48px", color:C.text3 }}>
                 <div style={{ fontSize:36, marginBottom:12, opacity:.3 }}>🏦</div>
                 <div>No deposits logged yet. Add your first entry above.</div>
               </td></tr>
-            ) : deposits.map(d => (
+            ) : filteredDeposits.map(d => (
               <tr key={d.id}>
                 <td style={{ ...S.td, fontSize:16, fontWeight:800, color:"#ffc800", fontFamily:"monospace" }}>${fmt(d.amount)}</td>
                 <td style={{ ...S.td, fontSize:12, color:C.text2 }}>{fmtDate(d.date)}</td>
@@ -1207,7 +1244,7 @@ export function AgentDepositBoard() {
                 <td style={{ ...S.td, fontWeight:600, color:C.text }}>{d.agent}</td>
                 <td style={{ ...S.td, fontWeight:600, color:"#ffc800" }}>{d.client||"—"}</td>
                 <td style={{ ...S.td, fontWeight:600, color:"#60a5fa" }}>{d.closer||"—"}</td>
-                <td style={{ ...S.td, fontFamily:"monospace", color:C.text3 }}>${fmt(runMap[d.id])}</td>
+                <td style={{ ...S.td, fontFamily:"monospace", color:C.text3 }}>${fmt(filteredRunMap[d.id])}</td>
                 <td style={S.td}>
                   <div style={S.row}>
                     <button style={{ ...btn("ghost"), padding:"5px 12px", fontSize:12 }}
@@ -1224,12 +1261,12 @@ export function AgentDepositBoard() {
             ))}
           </tbody>
         </table>
-        {deposits.length > 0 && (
+        {filteredDeposits.length > 0 && (
           <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"16px 20px", background:"rgba(255,200,0,.04)", borderTop:"1px solid rgba(255,200,0,.15)", flexWrap:"wrap", gap:10 }}>
             <span style={{ fontSize:11, fontWeight:700, color:C.text3, textTransform:"uppercase", letterSpacing:".1em" }}>Grand Total</span>
             <div style={{ display:"flex", alignItems:"center", gap:12 }}>
               <span style={{ fontSize:24, fontWeight:800, color:"#ffc800", fontFamily:"monospace" }}>${fmt(total)}</span>
-              <button style={{ ...btn("success"), padding:"8px 18px", fontSize:13 }} onClick={() => exportToExcel(deposits, companyName)}>
+              <button style={{ ...btn("success"), padding:"8px 18px", fontSize:13 }} onClick={() => exportToExcel(filteredDeposits, companyName)}>
                 📊 Export to Excel
               </button>
             </div>
@@ -1742,7 +1779,7 @@ export function AdminCRM() {
               <span style={{ fontSize:13, color:C.text3 }}>Ready to import <strong style={{ color:"#ffc800" }}>{importRows.length}</strong> clients</span>
               <div style={S.row}>
                 <button style={{ ...btn("ghost"), padding:"10px 20px" }} onClick={()=>{setShowImport(false);setImportRows([]);}}>Cancel</button>
-                <button style={{ ...btn("success"), padding:"10px 28px", fontSize:14, opacity:importing?0.7:1 }} onClick={confirmImport} disabled={importing}>
+                <button style={{ ...btn("success"), padding:"10px 28px", fontSize:14, opacity:importing?.7:1 }} onClick={confirmImport} disabled={importing}>
                   {importing?`⏳ Importing… ${importRows.length}`:`✅ Import ${importRows.length} Clients`}
                 </button>
               </div>
