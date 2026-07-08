@@ -27,7 +27,6 @@ export function LandingPage() {
 
   return (
     <div style={{ ...S.app, position:"relative", overflow:"hidden", isolation:"isolate" }}>
-      <CryptoBackground />
       <style>{globalCSS}</style>
       <div style={{ position:"relative", zIndex:1 }}>
 
