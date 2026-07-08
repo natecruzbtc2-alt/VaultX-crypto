@@ -1,6 +1,5 @@
 import { useApp } from "./AppContext";
 import { C, S, btn, globalCSS } from "./theme";
-import CryptoBackground from "./CryptoBackground";
 import { TickerMini } from "./components";
 import { DashOverview, DashMarkets, DashWallet, DashPortfolio, DashTrading, DashHistory } from "./DashTabs";
 import { AdminUsers, AdminDeposits, AdminWallets, AdminWithdrawals, AdminPending, AdminFees, AdminMarkets, AdminSettings, AgentDepositBoard, AdminCRM } from "./AdminTabs";
@@ -42,7 +41,6 @@ export function Dashboard() {
 
   return (
     <div style={{ ...S.app, display:"flex", flexDirection:"column", height:"100vh", overflow:"hidden", position:"relative" }}>
-      <CryptoBackground />
       <style>{globalCSS}</style>
 
       {/* Nav */}
@@ -140,7 +138,6 @@ export function AdminPanel() {
 
   return (
     <div style={{ ...S.app, display:"flex", flexDirection:"column", height:"100vh", overflow:"hidden", position:"relative" }}>
-      <CryptoBackground />
       <style>{globalCSS}</style>
 
       <nav style={{ ...S.nav, borderBottom:"1px solid rgba(255,200,0,.2)" }} className="vx-nav">
