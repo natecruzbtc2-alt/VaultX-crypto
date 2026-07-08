@@ -102,7 +102,7 @@ export default function CryptoBackground() {
     return () => {
       cancelAnimationFrame(animId);
       window.removeEventListener("resize",resize);
-      if(canvas) { canvas.style.display = "none"; }
+      if(canvas) { canvas.style.display = "none"; canvas.style.opacity = "0"; }
     };
   }, []);
 
