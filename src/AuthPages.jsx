@@ -81,6 +81,9 @@ export function LandingPage() {
               Sign In
             </button>
           </div>
+          <div style={{marginTop:16}}>
+            <button onClick={() => setShowGame(true)} style={{background:"rgba(255,255,255,.04)",border:"1px solid rgba(255,180,0,.25)",borderRadius:100,padding:"10px 24px",fontSize:13,color:"rgba(255,255,255,.7)",cursor:"pointer",fontFamily:"inherit",fontWeight:600,display:"inline-flex",alignItems:"center",gap:8}}>🎯 Play Price Prediction Game</button>
+          </div>
 
           <div style={{ display:"flex", justifyContent:"center", alignItems:"center", gap:20, flexWrap:"wrap" }}>
             {["🔒 No hidden fees","⚡ Instant execution","🏢 UK Regulated","💬 24/7 Support"].map((t,i) => (
