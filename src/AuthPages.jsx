@@ -197,7 +197,7 @@ export function LandingPage() {
           </div>
         </section>
 
-        <Footer />
+        <div style={{textAlign:"center",marginBottom:32}}><a href="/game.html" style={{display:"inline-flex",alignItems:"center",gap:8,background:"rgba(255,180,0,.08)",border:"1px solid rgba(255,180,0,.25)",borderRadius:100,padding:"12px 28px",fontSize:14,color:"#ffb400",fontWeight:700,textDecoration:"none",transition:"all .2s"}} onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,180,0,.15)";e.currentTarget.style.transform="translateY(-2px)";}} onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,180,0,.08)";e.currentTarget.style.transform="translateY(0)";}}>🎯 Play Price Prediction Game →</a></div><Footer />
         {showGame && <PredictionGame onClose={() => setShowGame(false)}/>}
       </div>
     </div>
