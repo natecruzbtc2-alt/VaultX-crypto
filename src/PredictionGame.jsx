@@ -157,7 +157,7 @@ export default function PredictionGame({ onClose }) {
 
   // ── INTRO SCREEN ────────────────────────────────────────────────────────
   if (screen === "intro") return (
-    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.92)", zIndex:500, display:"flex", alignItems:"center", justifyContent:"center", backdropFilter:"blur(12px)" }}
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.92)", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", backdropFilter:"blur(12px)" }}
       onClick={e => e.target === e.currentTarget && onClose?.()}>
       <div style={{ background:"linear-gradient(155deg,#100d08,#080608)", border:"1px solid rgba(255,180,0,.25)", borderRadius:22, padding:36, width:"min(480px,95vw)", boxShadow:"0 24px 80px rgba(0,0,0,.8)" }}>
         <div style={{ textAlign:"center", marginBottom:24 }}>
@@ -204,7 +204,7 @@ export default function PredictionGame({ onClose }) {
 
   // ── GAME OVER ────────────────────────────────────────────────────────────
   if (screen === "gameover") return (
-    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.92)", zIndex:500, display:"flex", alignItems:"center", justifyContent:"center", backdropFilter:"blur(12px)" }}>
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.92)", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", backdropFilter:"blur(12px)" }}>
       <div style={{ background:"linear-gradient(155deg,#100d08,#080608)", border:"1px solid rgba(255,180,0,.25)", borderRadius:22, padding:36, width:"min(420px,95vw)", textAlign:"center", boxShadow:"0 24px 80px rgba(0,0,0,.8)" }}>
         <div style={{ fontSize:56, marginBottom:12 }}>{score >= 400 ? "🏆" : score >= 200 ? "🎉" : "💪"}</div>
         <h2 style={{ fontSize:22, fontWeight:800, color:"#fff", marginBottom:6 }}>Game Over!</h2>
@@ -228,7 +228,7 @@ export default function PredictionGame({ onClose }) {
   const priceUp = priceChange >= 0;
 
   return (
-    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.92)", zIndex:500, display:"flex", alignItems:"center", justifyContent:"center", backdropFilter:"blur(12px)" }}>
+    <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,.92)", zIndex:9999, display:"flex", alignItems:"center", justifyContent:"center", backdropFilter:"blur(12px)" }}>
       <div style={{ background:"linear-gradient(155deg,#100d08,#080608)", border:"1px solid rgba(255,180,0,.25)", borderRadius:22, padding:28, width:"min(460px,95vw)", boxShadow:"0 24px 80px rgba(0,0,0,.8)", position:"relative" }}>
 
         {/* Header */}
